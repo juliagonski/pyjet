@@ -1,31 +1,26 @@
 #!/usr/bin/env python
 
 import sys
-
-if sys.version_info[0] < 3:
-    import __builtin__ as builtins
-else:
-    import builtins
+import os
 
 try:
-    # Try to use setuptools if installed
-    from setuptools import setup, Extension
-    from pkg_resources import parse_version, get_distribution
-
-    if get_distribution('setuptools').parsed_version < parse_version('0.7'):
-        # setuptools is too old (before merge with distribute)
-        raise ImportError
-
-    from setuptools.command.build_ext import build_ext as _build_ext
-    from setuptools.command.install import install as _install
-    use_setuptools = True
-
+    import builtins
 except ImportError:
-    # Use distutils instead
-    from distutils.core import setup, Extension
-    from distutils.command.build_ext import build_ext as _build_ext
-    from distutils.command.install import install as _install
-    use_setuptools = False
+    import __builtin__ as builtins
+
+
+from setuptools import setup, Extension
+from pkg_resources import parse_version, get_distribution
+
+from setuptools.command.build_ext import build_ext as _build_ext
+from setuptools.command.install import install as _install
+
+if not os.path.exists('pyjet/src/_libpyjet.cpp') or os.path.getmtime('pyjet/src/_libpyjet.pyx') > os.path.getmtime('pyjet/src/_libpyjet.cpp'):
+    from Cython.Build import cythonize
+    ext = 'pyx'
+else:
+    cythonize = None
+    ext = 'cpp'
 
 import os
 import platform
@@ -61,7 +56,7 @@ def fastjet_prefix(fastjet_config='fastjet-config'):
 
 libpyjet = Extension(
     'pyjet._libpyjet',
-    sources=['pyjet/src/_libpyjet.cpp'],
+    sources=['pyjet/src/_libpyjet.' + ext],
     depends=['pyjet/src/fastjet.h'],
     language='c++',
     include_dirs=[
@@ -71,6 +66,9 @@ libpyjet = Extension(
         '-Wno-unused-function',
         '-Wno-write-strings',
     ])
+
+if cythonize:
+    libpyjet, = cythonize(libpyjet)
 
 external_fastjet = False
 
@@ -146,18 +144,6 @@ except ImportError:
 else:
     build_requires = []
 
-if use_setuptools:
-    setuptools_options = dict(
-        setup_requires=build_requires,
-        install_requires=build_requires,
-        extras_require={
-            'with-numpy': ('numpy',),
-        },
-        zip_safe=False,
-    )
-else:
-    setuptools_options = dict()
-
 setup(
     name='pyjet',
     version='1.5.0',
@@ -202,5 +188,10 @@ setup(
         'Programming Language :: Cython',
         'Development Status :: 5 - Production/Stable',
     ],
-    **setuptools_options
+    setup_requires=build_requires,
+    install_requires=build_requires,
+    extras_require={
+        'with-numpy': ('numpy',),
+    },
+    zip_safe=False,
 )
