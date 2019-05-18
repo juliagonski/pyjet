@@ -124,7 +124,7 @@ cdef class ClusterSequence:
         """ return a vector of all jets when the event is clustered
         (in the exclusive sense) to exactly njets.
         """
-        if self.pseudojets.size() < njets:
+        if int(self.pseudojets.size()) < njets:
             raise ValueError("Requested {0} jets but there are only {1} particles".format(njets, self.pseudojets.size()))
         cdef vector[fastjet.PseudoJet] jets = self.sequence.exclusive_jets(njets)
         if sort:
@@ -178,12 +178,18 @@ cdef class ClusterSequenceArea(ClusterSequence):
 cdef cppclass PseudoJetUserInfo(fastjet.UserInfoBase):
     PyObject* info
 
-    __init__(PyObject* info):
-        this.info = info
+    PseudoJetUserInfo():
+        this.info = NULL
+
+    void set_ptr(PyObject* info_):
+        if this.info != NULL:
+            Py_XDECREF(this.info)
+        this.info = info_
         Py_XINCREF(this.info)
 
-    __dealloc__():
-        Py_XDECREF(this.info)
+    __delloc__():
+        if this.info != NULL:
+            Py_XDECREF(this.info)
 
 
 cdef class PseudoJet:
@@ -224,10 +230,18 @@ cdef class PseudoJet:
         return _Py_HashPointer(<void*>self)
 
     @property
-    def info(self):
+    def userinfo(self):
         if self.userinfo != NULL:
             return <object> self.userinfo.info
         return None
+    
+    @userinfo.setter
+    def userinfo(self, item):
+        if self.userinfo == NULL:
+            self.userinfo = new PseudoJetUserInfo()
+
+        self.userinfo.set_ptr(<PyObject*> item)
+            
 
     def __getattr__(self, attr):
         userinfo_dict = self.info
@@ -407,6 +421,7 @@ cdef int array_to_pseudojets(np.ndarray vectors, vector[fastjet.PseudoJet]& outp
             userinfo_dict = {}
             for field in fields[4:]:
                 userinfo_dict[field] = vectors[field][i]
-            userinfo = new PseudoJetUserInfo(<PyObject*> userinfo_dict)
+            userinfo = new PseudoJetUserInfo()
+            userinfo.set_ptr(<PyObject*> userinfo_dict)
             pseudojet.set_user_info(userinfo)
         output.push_back(pseudojet)
