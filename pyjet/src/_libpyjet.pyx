@@ -294,6 +294,10 @@ cdef class PseudoJet:
     @property
     def pz(self):
         return self.jet.pz()
+    
+    @property
+    def cluster_hist_index(self):
+        return self.jet.cluster_hist_index()
 
     @property
     def child(self):

@@ -23,6 +23,7 @@ cdef extern from "fastjet.h" namespace "fastjet":
         double pseudorapidity()
         double perp()
         double m()
+        int cluster_hist_index()
         double mperp()
         double kt_distance(PseudoJet&)
         double plain_distance(PseudoJet&)
