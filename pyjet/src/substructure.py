@@ -76,3 +76,40 @@ def C2(jet, ecf_list = None):
 def D2(jet, ecf_list = None):
   if ecf_list is None: ecf_list = ECF(jet)
   return ((ecf[2]*np.pow(ecf[0], 3))/np.pow(ecf[1], 3))
+
+def Tau1(jet, radius=1):
+  c = jet.constituents()
+  n_consts = len(c)
+  d0 = jet.pt()*radius
+  d0tau = 0
+  for i in range(n_consts):
+    d0tau += c[i].pt()*deltaR(jet, c[i])
+  return (d0tau/d0)
+  
+  
+def Tau2(jet, radius=1):
+  c = jet.constituents()
+  n_consts = len(c)
+  subjets = [] #TODO: Get subjets by unpacking clustering algorithm until there are 2 subjets 
+  d0 = jet.pt()*radius
+  d0tau = 0
+  for i in range(n_consts):
+    dRs = []
+    for s in range(len(subjets)):
+      dRs.append(deltaR(c[i], subjet[s]))
+    d0tau += c[i].pt()*np.min(dRs)
+  return (d0tau/d0)
+
+def Tau3(jet, radius=1):
+  c = jet.constituents()
+  n_consts = len(c)
+  subjets = [] #TODO: Get subjets by unpacking clustering algorithm until there are 3 subjets 
+  d0 = jet.pt()*radius
+  d0tau = 0
+  for i in range(n_consts):
+    dRs = []
+    for s in range(len(subjets)):
+      dRs.append(deltaR(c[i], subjet[s]))
+    d0tau += c[i].pt()*np.min(dRs)
+  return (d0tau/d0)
+
