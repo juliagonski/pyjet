@@ -72,7 +72,7 @@ libpyjet = Extension(
         '-Wno-write-strings',
     ])
 
-external_fastjet = False
+external_fastjet = True
 
 
 class build_ext(_build_ext):

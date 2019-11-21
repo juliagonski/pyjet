@@ -7,6 +7,8 @@ cdef extern from "fastjet.h":
 
 
 cdef extern from "fastjet.h" namespace "fastjet":
+    cdef cppclass EnergyCorrelator:
+        EnergyCorrelator()
 
     cdef cppclass PseudoJet:
         PseudoJet(const double, const double, const double, const double)
