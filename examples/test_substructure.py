@@ -1,6 +1,6 @@
 ###### To implement changes in fastjet: 
 #-- (pip install cython on xenia)
-#-- Add functionality from fastjet to fastjet.pxd file
+#-- Add functionality from fastjet to fastjet.pxd file and __libpyjet.pyx
 #-- in pyjet/src: cython —cplus __libpyjet.pyx (this generates .cpp file)
 #-- in pyjet: make 
 
