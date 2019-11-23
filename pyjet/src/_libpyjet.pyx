@@ -15,6 +15,7 @@ from cpython cimport PyObject
 from cpython.ref cimport Py_INCREF, Py_XINCREF, Py_DECREF, Py_XDECREF
 from cpython.cobject cimport PyCObject_AsVoidPtr
 
+#this is the name of the pxd file
 cimport fastjet
 
 cdef extern from "2to3.h":
@@ -33,6 +34,7 @@ USING_EXTERNAL_FASTJET = fastjet._USING_EXTERNAL_FASTJET
 
 # hide the FastJet banner and don't print errors
 fastjet.silence()
+
 
 JET_ALGORITHM = {
     'kt': fastjet.kt_algorithm,
@@ -53,6 +55,17 @@ JET_AREA = {
     'one_ghost_passive': fastjet.one_ghost_passive_area,
     'passive': fastjet.passive_area,
     'voronoi': fastjet.voronoi_area,
+}
+
+MEASURE = {
+    'pt_R': fastjet.pt_R,
+    'E_theta': fastjet.E_theta,
+    'E_inv': fastjet.E_inv,
+}
+
+STRATEGY = {
+    'slow': fastjet.slow,
+    'storage_array': fastjet.storage_array,
 }
 
 
@@ -82,9 +95,44 @@ cdef class JetDefinition:
         del self.jdef
 
 
+cdef class Nsubjettiness:
+    """ Python wrapper class for fjcontrib Nsubjettiness
+    """
+    cdef fastjet.Nsubjettiness* nsub
+
+
 cdef class EnergyCorrelator:
     """ Python wrapper class for fjcontrib EnergyCorrelator
     """
+    cdef fastjet.EnergyCorrelator* ecf
+
+    def __cinit__(self):
+        self.ecf = NULL
+
+    def __init__(self, unsigned int N,
+                         double beta,
+                         fastjet.Measure measure,
+                         fastjet.Strategy strategy):
+        cdef fastjet.Measure _measure
+        try:
+            _measure = MEASURE[measure]
+        except KeyError:
+            raise ValueError("{0:r} is not a valid measure".format(measure))
+        cdef fastjet.Strategy _strategy
+        try:
+            _strategy = STRATEGY[strategy]
+        except KeyError:
+            raise ValueError("{0:r} is not a valid strategy".format(strategy))
+        self.ecf = new fastjet.EnergyCorrelator(self.N, self.beta, self.measure, self.strategy)
+    
+    def __dealloc__(self):
+        del self.ecf
+
+    def result(self, PseudoJet pseudojet):
+        """ ECF result
+        """
+        cdef ecf_result = self.ecf.result(pseudojet.jet)
+        return ecf_result
 
 cdef class ClusterSequence:
     """ Python wrapper class for fastjet::ClusterSequence
@@ -298,7 +346,7 @@ cdef class PseudoJet:
     @property
     def pz(self):
         return self.jet.pz()
-
+    
     @property
     def cluster_hist_index(self):
         return self.jet.cluster_hist_index()

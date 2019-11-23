@@ -5,10 +5,53 @@ from libcpp.vector cimport vector
 cdef extern from "fastjet.h":
     cdef void raise_py_error()
 
+cdef extern from "fastjet.h" namespace "fastjet::contrib":
+    #This could be not right yet
+    cdef cppclass Nsubjettiness:
+        Nsubjettiness()
+        Nsubjettiness(int,
+                 const AxesDefinition&,
+                 const MeasureDefinition&)
 
-cdef extern from "fastjet.h" namespace "fastjet":
+    cdef cppclass NsubjettinessRatio:
+        NsubjettinessRatio()
+        NsubjettinessRatio(int,int,
+                 const AxesDefinition&,
+                 const MeasureDefinition&)
+    
+    cdef cppclass AxesDefinition:
+        AxesDefinition()
+    cdef cppclass MeasureDefinition:
+        MeasureDefinition()
+
     cdef cppclass EnergyCorrelator:
         EnergyCorrelator()
+        EnergyCorrelator(unsigned int,
+                         double,
+                         Measure,
+                         Strategy)
+        EnergyCorrelatorC2(double, Measure, Strategy)
+        EnergyCorrelatorD2(double, Measure, Strategy)
+        double result(PseudoJet&)
+
+cdef extern from "fastjet.h" namespace "fastjet::contrib::EnergyCorrelator":
+    cdef enum Measure "fastjet::contrib::EnergyCorrelator::Measure":
+         pt_R,     #//< use transverse momenta and boost-invariant angles,
+            #///< eg \f$\mathrm{ECF}(2,\beta) = \sum_{i<j} p_{ti} p_{tj} \Delta R_{ij}^{\beta} \f$
+         E_theta,  #///  use energies and angles,
+            #///  eg \f$\mathrm{ECF}(2,\beta) = \sum_{i<j} E_{i} E_{j}   \theta_{ij}^{\beta} \f$
+         E_inv #///  use energies and invariant mass,
+            #///  eg \f$\mathrm{ECF}(2,\beta) = \sum_{i<j} E_{i} E_{j}   (\frac{2 p_{i} \cdot p_{j}}{E_{i} E_{j}})^{\beta/2} \f$
+
+    cdef enum Strategy "fastjet::contrib::EnergyCorrelator::Strategy":
+        slow,         # ///< interparticle angles are not cached.
+            #///< For N>=3 this leads to many expensive recomputations,
+            #///< but has only O(n) memory usage for n particles
+        storage_array  #/// the interparticle angles are cached. This gives a significant speed
+            #/// improvement for N>=3, but has a memory requirement of (4n^2) bytes.
+
+
+cdef extern from "fastjet.h" namespace "fastjet":
 
     cdef cppclass PseudoJet:
         PseudoJet(const double, const double, const double, const double)
@@ -105,3 +148,5 @@ cdef extern from "fastjet.h":
     bool jet_has_area(PseudoJet*)
     double jet_area(PseudoJet*)
     double jet_area_error(PseudoJet*)
+
+
