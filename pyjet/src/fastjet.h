@@ -33,6 +33,7 @@ class ClusterSequenceArea: public ClusterSequence {
 
 #define _USING_EXTERNAL_FASTJET 1
 #include "fastjet/contrib/EnergyCorrelator.hh"
+#include "fastjet/contrib/Nsubjettiness.hh"
 #include "fastjet/PseudoJet.hh"
 #include "fastjet/ClusterSequence.hh"
 #include "fastjet/ClusterSequenceArea.hh"

@@ -1,27 +1,111 @@
 ###### To implement changes in fastjet: 
 #-- (pip install cython on xenia)
-#-- Add functionality from fastjet to fastjet.pxd file
-#-- in pyjet/src: cython —cplus __libpyjet.pyx (this generates .cpp file)
-#-- in pyjet: make 
+#-- Add functionality from fastjet to fastjet.pxd file and __libpyjet.pyx
+#-- in pyjet/src: cython --cplus _libpyjet.pyx (this generates .cpp file)
+#-- in pyjet: make  (or python3 setup.py build_ext --inplace)
+
+##########TODO 
+#Split12, Split23: KTsplitting tool
+#Aplanarity: implement SphericityTensor/CenterOfMassTool
+#DONE:
+#C2,D2 (ECF = energy correlation functions) 
+#Tau1, tau2, tau3 (Tau1_wta), Tau21, Tau23, Tau13 
+#Qw
+#PlanarFlow
+#Angularity
+#ZCut12 
+#KtDR
+#
+
 
 import h5py    
 import numpy as np 
 import matplotlib.pyplot as plt
 import pandas as pd
-from skhep.math.vectors import *
-from scipy.special import softmax
+#from skhep.math.vectors import *
+import skhep
+#from scipy.special import softmax
 import pickle
 import glob
 from pprint import pprint
 
 import sys 
-sys.path.append("/nevis/kolya/home/jgonski/yXH/pyjet")
-from pyjet import DTYPE_PTEPM,ClusterSequence,JetDefinition,PseudoJet,cluster
+sys.path.append("/Users/juliagonski/Documents/Columbia/Physics/yXH/test_pyjet_extfastjet/pyjet")
+from pyjet import DTYPE_PTEPM,ClusterSequence,JetDefinition,PseudoJet,cluster,EnergyCorrelator,Nsubjettiness
 #from pyjet import *
+#import pyjet
 
 
 ################################### 
 ## Substructure Variables 
+################################### 
+
+#---- Energy Correlator
+# double EnergyCorrelator::result(const PseudoJet& jet) const 
+#-------------------------------------------------------------------
+def calc_ecf(jet):
+  #From fjcontrib EnergyCorrelator.cc: observable C2 ECF(3,beta)*ECF(1,beta)/ECF(2,beta)^2 
+  #From fjcontrib EnergyCorrelator.cc: observable D2 ECF(3,beta)*ECF(1,beta)^3/ECF(2,beta)^3 
+  beta = 1.0 #"most common use of N-subjettiness in the literature takes beta = 1"
+  measure = 'pt_R' #enum; 
+  strategy = 'storage_array' #enum; or 'slow' 
+
+  ECF1 = EnergyCorrelator(1,beta)
+  ECF2 = EnergyCorrelator(2,beta)
+  ECF3 = EnergyCorrelator(3,beta)
+  #result_1 = ECF1.result(jet)
+  #result_2 = ECF2.result(jet)
+  #result_3 = ECF3.result(jet)
+  result_1 = -1
+  result_2 = -1
+  result_3 = -1
+  #C2: return result_3*result_1/result_2^2
+  #D2: return result_3*result_1^3/result_2^3
+  # fjcontrib actually just has a function! 
+  ECF_c2 = EnergyCorrelatorC2(beta, measure, strategy) 
+  ECF_d2 = EnergyCorrelatorD2(beta, measure, strategy) 
+  return [ECF_c2.result(jet), ECF_d2.result(jet)]
+
+
+#---- Nsubjettiness
+#-------------------------------------------------------------------
+def calc_tau(jet):
+  #axes_def = contrib::KT_Axes() #from athena 
+  #measure_def= contrib::NormalizedMeasure() #these are classes...  fastjet::contrib::KT_Axes kt_axes
+  axes_def = KT_Axes()
+  measure_def = NormalizedMeasure()
+  Nsub_1 = Nsubjettiness(1,axes_def,measure_def)
+  Nsub_2 = Nsubjettiness(2,axes_def,measure_def)
+  Nsub_3 = Nsubjettiness(3,axes_def,measure_def)
+  tau_1 = Nsub_1.result(jet)
+  tau_2 = Nsub_2.result(jet)
+  tau_3 = Nsub_3.result(jet)
+
+  return [tau_1,tau_2,tau_3]
+#-------------------------------------------------------------------
+def calc_tauratio(jet):
+  axes_def = KT_Axes()
+  measure_def = NormalizedMeasure()
+  Nsub_21 = NsubjettinessRatio(2,1,axes_def,measure_def)
+  Nsub_23 = NsubjettinessRatio(2,3,axes_def,measure_def)
+  Nsub_13 = NsubjettinessRatio(1,3,axes_def,measure_def)
+  tau_21 = Nsub_21.result(jet)
+  tau_23 = Nsub_23.result(jet)
+  tau_13 = Nsub_13.result(jet)
+
+  return [tau_21,tau_23,tau_13]
+
+
+#---- Kt splitting
+#-------------------------------------------------------------------
+def calc_ktsplit(jet):
+  split12 = -1 #TODO
+  split23 = -1
+  return [split12, split23]
+
+ 
+
+#---- Simple vars
 #-------------------------------------------------------------------
 def calc_aplanarity(jet):
   Aplanarity = -999.*1000
@@ -247,7 +331,7 @@ def calc_ktdr(jet):
 #-------------------------------------------------------------------------
 if __name__ == "__main__":
 
-  f = pd.read_hdf("/data/users/jgonski/LHCOlympics2020/events_anomalydetection.h5")
+  f = pd.read_hdf("../lhcOlympics2020/events_anomalydetection.h5")
   events_combined = f.T
   np.shape(events_combined)
 
@@ -280,7 +364,7 @@ if __name__ == "__main__":
           pass
     
       sequence = cluster(pseudojets_input, R=1.0, p=-1)
-      jets = sequence.inclusive_jets(ptmin=20)   #constituent list 
+      jets = sequence.inclusive_jets(ptmin=20)   #resulting clustered jets with pT > 20
  
       ############################
       ### Substructure variables
@@ -294,8 +378,15 @@ if __name__ == "__main__":
           #print('Low pT/low mass jet, not processing')
           continue
         else:
-
           #calc substructure variables 
+          #ECF
+          c2, d2 = calc_ecf(jet)
+          #Nsubjettiness
+          tau1,tau2,tau3 = calc_tau(jet)
+          tau21,tau23,tau13 = calc_tauratio(jet)
+          #Kt splitting
+          split12,split23 = calc_ktsplit(jet)
+          #Simple vars
           KtDR = calc_ktdr(jet)
           planarFlow = calc_planarflow(jet)
           angularity = calc_angularity(jet)
@@ -317,4 +408,3 @@ if __name__ == "__main__":
   for i in range(n_start,n_consts):
     outfile_sig.create_dataset(str(i)+"/hlvs", data=sorted_hlvs_signal[str(i)])
   outfile_sig.close()
-
