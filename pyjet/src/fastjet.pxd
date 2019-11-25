@@ -5,8 +5,10 @@ from libcpp.vector cimport vector
 cdef extern from "fastjet.h":
     cdef void raise_py_error()
 
-
 cdef extern from "fastjet.h" namespace "fastjet":
+    
+    cdef cppclass EnergyCorrelator:
+        EnergyCorrelator()
 
     cdef cppclass PseudoJet:
         PseudoJet(const double, const double, const double, const double)
@@ -103,3 +105,5 @@ cdef extern from "fastjet.h":
     bool jet_has_area(PseudoJet*)
     double jet_area(PseudoJet*)
     double jet_area_error(PseudoJet*)
+
+

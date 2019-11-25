@@ -82,6 +82,10 @@ cdef class JetDefinition:
         del self.jdef
 
 
+cdef class EnergyCorrelator:
+    """ Python wrapper class for fjcontrib EnergyCorrelator
+    """
+
 cdef class ClusterSequence:
     """ Python wrapper class for fastjet::ClusterSequence
     """

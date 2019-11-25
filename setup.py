@@ -72,7 +72,7 @@ libpyjet = Extension(
         '-Wno-write-strings',
     ])
 
-external_fastjet = False
+external_fastjet = True
 
 
 class build_ext(_build_ext):
@@ -97,6 +97,7 @@ class build_ext(_build_ext):
         libpyjet.include_dirs.append(numpy.get_include())
         if external_fastjet or self.external_fastjet:
             prefix = fastjet_prefix()
+            print('Prefix: ' , prefix)
             libpyjet.include_dirs += [os.path.join(prefix, 'include')]
             libpyjet.library_dirs = [os.path.join(prefix, 'lib')]
             libpyjet.runtime_library_dirs = libpyjet.library_dirs
