@@ -52,9 +52,6 @@ cdef extern from "fastjet.h" namespace "fastjet::contrib::EnergyCorrelator":
 
 
 cdef extern from "fastjet.h" namespace "fastjet":
-    
-    cdef cppclass EnergyCorrelator:
-        EnergyCorrelator()
 
     cdef cppclass PseudoJet:
         PseudoJet(const double, const double, const double, const double)
