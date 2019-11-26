@@ -120,7 +120,7 @@ cdef class EnergyCorrelator:
     """
     cdef fastjet.EnergyCorrelator* ecf
     #cdef fastjet.JetDefinition* jetdef
-    cdef fastjet.JetFFMoments* jetmoms
+    #cdef fastjet.JetFFMoments* jetmoms
 
     def __cinit__(self):
         self.ecf = NULL
@@ -146,11 +146,10 @@ cdef class EnergyCorrelator:
         #except KeyError:
         #    raise ValueError("{0:r} is not a valid jet algorithm".format('undefined'))
         #if _measure is not None and _strategy is not None and N is not None and beta is not None: self.ecf = new fastjet.EnergyCorrelator(N, beta, _measure, _strategy)
-        #self.ecf = new fastjet.EnergyCorrelator(N, beta, _measure, _strategy)
         #self.ecf = NULL
-        #self.ecf = new fastjet.EnergyCorrelator(N, beta,_measure,_strategy)
+        self.ecf = new fastjet.EnergyCorrelator(N, beta,_measure,_strategy)
         #self.jetdef = new fastjet.JetDefinition(_algo, 0.1)
-        self.jetmoms = new fastjet.JetFFMoments(1.0,2.0,3) #test only
+        #self.jetmoms = new fastjet.JetFFMoments(1.0,2.0,3) #test only
     
     def __dealloc__(self):
         del self.ecf
