@@ -21,6 +21,9 @@ cimport fastjet
 cdef extern from "2to3.h":
     pass
 
+cdef extern from "fastjet.h" namespace "contrib":
+    pass
+
 cdef extern from "Python.h":
     long _Py_HashPointer(void*)
 
@@ -95,35 +98,59 @@ cdef class JetDefinition:
         del self.jdef
 
 
-cdef class Nsubjettiness:
-    """ Python wrapper class for fjcontrib Nsubjettiness
+cdef class AxesDefinition:
+    """ Python wrapper class for fjcontrib AxesDefinition
     """
-    cdef fastjet.Nsubjettiness* nsub
+    cdef fastjet.AxesDefinition* axes_def
+    
+    def __cinit__(self):
+        self.axes_def = NULL
+    
+    def __init__(self):
+      #self.axes_def = new fastjet.AxesDefinition()
+      self.axes_def = NULL
+    
+    def __dealloc__(self):
+        del self.axes_def
 
+  
 
 cdef class EnergyCorrelator:
     """ Python wrapper class for fjcontrib EnergyCorrelator
     """
     cdef fastjet.EnergyCorrelator* ecf
+    #cdef fastjet.JetDefinition* jetdef
+    cdef fastjet.JetFFMoments* jetmoms
 
     def __cinit__(self):
         self.ecf = NULL
 
     def __init__(self, unsigned int N,
                          double beta,
-                         fastjet.Measure measure,
-                         fastjet.Strategy strategy):
-        cdef fastjet.Measure _measure
+                         str measure = 'pt_R', 
+                         str strategy = 'storage_array'):
+        cdef fastjet.Measure _measure 
         try:
             _measure = MEASURE[measure]
         except KeyError:
             raise ValueError("{0:r} is not a valid measure".format(measure))
-        cdef fastjet.Strategy _strategy
+        cdef fastjet.Strategy _strategy 
         try:
             _strategy = STRATEGY[strategy]
         except KeyError:
             raise ValueError("{0:r} is not a valid strategy".format(strategy))
-        self.ecf = new fastjet.EnergyCorrelator(self.N, self.beta, self.measure, self.strategy)
+        ## test only
+        #cdef fastjet.JetAlgorithm _algo
+        #try:
+        #    _algo = JET_ALGORITHM['kt']
+        #except KeyError:
+        #    raise ValueError("{0:r} is not a valid jet algorithm".format('undefined'))
+        #if _measure is not None and _strategy is not None and N is not None and beta is not None: self.ecf = new fastjet.EnergyCorrelator(N, beta, _measure, _strategy)
+        #self.ecf = new fastjet.EnergyCorrelator(N, beta, _measure, _strategy)
+        #self.ecf = NULL
+        #self.ecf = new fastjet.EnergyCorrelator(N, beta,_measure,_strategy)
+        #self.jetdef = new fastjet.JetDefinition(_algo, 0.1)
+        self.jetmoms = new fastjet.JetFFMoments(1.0,2.0,3) #test only
     
     def __dealloc__(self):
         del self.ecf
@@ -131,9 +158,53 @@ cdef class EnergyCorrelator:
     def result(self, PseudoJet pseudojet):
         """ ECF result
         """
-        cdef ecf_result = self.ecf.result(pseudojet.jet)
-        return ecf_result
->>>>>>> 7703c2a21c08549316b66b6c5e838b2f13b8362c
+        #cdef ecf_result = self.ecf.result(pseudojet.jet)
+        return 1.0
+
+#TODO
+cdef class EnergyCorrelatorD2:
+    """ Python wrapper class for fjcontrib EnergyCorrelator
+    """
+    cdef fastjet.EnergyCorrelatorD2* ecf
+
+cdef class EnergyCorrelatorC2:
+    """ Python wrapper class for fjcontrib EnergyCorrelator
+    """
+    cdef fastjet.EnergyCorrelatorC2* ecf
+
+cdef class NsubjettinessRatio:
+    """ Python wrapper class for fjcontrib Nsubjettiness
+    """
+    cdef fastjet.NsubjettinessRatio* nsub
+
+cdef class Nsubjettiness:
+    """ Python wrapper class for fjcontrib Nsubjettiness
+    """
+    cdef fastjet.Nsubjettiness* nsub
+
+    def __cinit__(self):
+        self.nsub = NULL
+ 
+    def __init__(self, int N,
+                         axes_def = '', 
+                         measure_def = ''):
+        #cdef fastjet.AxesDef _measure 
+        #try:
+        #    _axesdef = AXES[axes_def]
+        #except KeyError:
+        #    raise ValueError("{0:r} is not a valid measure".format(measure))
+        #cdef fastjet.Strategy _strategy 
+        #try:
+        #    _measure = MEASURE[]
+        #except KeyError:
+        #    raise ValueError("{0:r} is not a valid strategy".format(strategy))
+        #if _measure is not None: 
+        #  if _strategy is not None: self.ecf = new fastjet.EnergyCorrelator(N, beta, _measure, _strategy)
+        self.nsub = NULL
+
+    def __dealloc__(self):
+        del self.nsub
+
 
 cdef class ClusterSequence:
     """ Python wrapper class for fastjet::ClusterSequence

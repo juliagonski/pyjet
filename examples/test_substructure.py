@@ -1,8 +1,7 @@
 ###### To implement changes in fastjet: 
 #-- (pip install cython on xenia)
-#-- Add functionality from fastjet to fastjet.pxd file and __libpyjet.pyx
-#-- in pyjet/src: cython --cplus _libpyjet.pyx (this generates .cpp file)
-#-- in pyjet: make  (or python3 setup.py build_ext --inplace)
+#-- Add functionality from fastjet to fastjet.pxd file
+#-- in pyjet: make 
 
 ##########TODO 
 #Split12, Split23: KTsplitting tool
@@ -31,9 +30,7 @@ from pprint import pprint
 
 import sys 
 sys.path.append("/Users/juliagonski/Documents/Columbia/Physics/yXH/test_pyjet_extfastjet/pyjet")
-from pyjet import DTYPE_PTEPM,ClusterSequence,JetDefinition,PseudoJet,cluster,EnergyCorrelator,Nsubjettiness
-#from pyjet import *
-#import pyjet
+from pyjet import DTYPE_PTEPM,ClusterSequence,JetDefinition,PseudoJet,cluster,EnergyCorrelator,EnergyCorrelatorC2,EnergyCorrelatorD2,Nsubjettiness,NsubjettinessRatio,JetFFMoments
 
 
 ################################### 
@@ -49,22 +46,23 @@ def calc_ecf(jet):
   beta = 1.0 #"most common use of N-subjettiness in the literature takes beta = 1"
   measure = 'pt_R' #enum; 
   strategy = 'storage_array' #enum; or 'slow' 
-
   ECF1 = EnergyCorrelator(1,beta)
   ECF2 = EnergyCorrelator(2,beta)
   ECF3 = EnergyCorrelator(3,beta)
-  #result_1 = ECF1.result(jet)
-  #result_2 = ECF2.result(jet)
-  #result_3 = ECF3.result(jet)
-  result_1 = -1
-  result_2 = -1
-  result_3 = -1
-  #C2: return result_3*result_1/result_2^2
-  #D2: return result_3*result_1^3/result_2^3
+  result_1 = ECF1.result(jet)
+  result_2 = ECF2.result(jet)
+  result_3 = ECF3.result(jet)
+  #C2:
+  c2 = result_3*result_1/np.power(result_2,2)
+  print('C2: ', c2)
+  #D2: 
+  d2 = result_3*result_1*result_1*result_1/np.power(result_2,3)
+  print('D2: ', d2)
   # fjcontrib actually just has a function! 
-  ECF_c2 = EnergyCorrelatorC2(beta, measure, strategy) 
-  ECF_d2 = EnergyCorrelatorD2(beta, measure, strategy) 
-  return [ECF_c2.result(jet), ECF_d2.result(jet)]
+  #ECF_c2 = EnergyCorrelatorC2(beta, measure, strategy) 
+  #ECF_d2 = EnergyCorrelatorD2(beta, measure, strategy) 
+  #return [ECF_c2.result(jet), ECF_d2.result(jet)]
+  return [c2, d2]
 
 
 #---- Nsubjettiness
@@ -331,7 +329,9 @@ def calc_ktdr(jet):
 #-------------------------------------------------------------------------
 if __name__ == "__main__":
 
-  f = pd.read_hdf("../lhcOlympics2020/events_anomalydetection.h5")
+  #print(dir(pyjet))
+
+  f = pd.read_hdf("/Users/juliagonski/Documents/Columbia/Physics/yXH/lhcOlympics2020/events_anomalydetection.h5")
   events_combined = f.T
   np.shape(events_combined)
 

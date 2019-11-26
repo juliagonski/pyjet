@@ -19,19 +19,33 @@ cdef extern from "fastjet.h" namespace "fastjet::contrib":
                  const AxesDefinition&,
                  const MeasureDefinition&)
     
+    cdef cppclass JetFFMoments:
+        JetFFMoments()
+        JetFFMoments(double, double, int)
+        JetMedianBackgroundEstimator()
+
     cdef cppclass AxesDefinition:
         AxesDefinition()
+
     cdef cppclass MeasureDefinition:
         MeasureDefinition()
 
+    cdef cppclass EnergyCorrelatorC2:
+        EnergyCorrelatorC2()
+        EnergyCorrelatorC2(double, Measure, Strategy)
+        double result(PseudoJet&)
+
+    cdef cppclass EnergyCorrelatorD2:
+        EnergyCorrelatorD2()
+        EnergyCorrelatorD2(double, Measure, Strategy)
+        double result(PseudoJet&)
+
     cdef cppclass EnergyCorrelator:
-        EnergyCorrelator()
+        #EnergyCorrelator() 
         EnergyCorrelator(unsigned int,
                          double,
                          Measure,
-                         Strategy)
-        EnergyCorrelatorC2(double, Measure, Strategy)
-        EnergyCorrelatorD2(double, Measure, Strategy)
+                         Strategy) except +raise_py_error
         double result(PseudoJet&)
 
 cdef extern from "fastjet.h" namespace "fastjet::contrib::EnergyCorrelator":

@@ -1,5 +1,6 @@
 from ._libpyjet import (ClusterSequence, ClusterSequenceArea,
-                        JetDefinition, PseudoJet, EnergyCorrelator, Nsubjettiness,
+                        JetDefinition, PseudoJet, EnergyCorrelator,
+                        EnergyCorrelatorC2,EnergyCorrelatorD2,Nsubjettiness,NsubjettinessRatio,
                         DTYPE, DTYPE_PTEPM, DTYPE_EP, USING_EXTERNAL_FASTJET)
 
 __all__ = [
