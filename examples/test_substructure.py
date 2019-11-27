@@ -1,7 +1,8 @@
 ###### To implement changes in fastjet: 
 #-- (pip install cython on xenia)
-#-- Add functionality from fastjet to fastjet.pxd file
-#-- in pyjet: make 
+#-- Add functionality from fastjet to fastjet.pxd file and __libpyjet.pyx
+#-- in pyjet/src: cython --cplus _libpyjet.pyx (this generates .cpp file)
+#-- in pyjet: make  (or python3 setup.py build_ext --inplace)
 
 ##########TODO 
 #Split12, Split23: KTsplitting tool
