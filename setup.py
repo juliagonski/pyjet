@@ -51,7 +51,9 @@ def fastjet_prefix(fastjet_config='fastjet-config'):
     try:
         prefix = subprocess.Popen(
             [fastjet_config, '--prefix'],
-            stdout=subprocess.PIPE).communicate()[0].strip()
+            stdout=subprocess.PIPE).communicate()[0].strip() 
+        #prefix = b'../../fastjet-install/'
+        print('Julia: ' ,prefix)
     except IOError:
         sys.exit("unable to locate fastjet-config. Is it in your $PATH?")
     if sys.version > '3':
@@ -70,6 +72,7 @@ libpyjet = Extension(
     extra_compile_args=[
         '-Wno-unused-function',
         '-Wno-write-strings',
+    #extra_link_args=['-framework', 'contrib'] )
     ])
 
 external_fastjet = True
@@ -100,7 +103,7 @@ class build_ext(_build_ext):
             libpyjet.include_dirs += [os.path.join(prefix, 'include')]
             libpyjet.library_dirs = [os.path.join(prefix, 'lib')]
             libpyjet.runtime_library_dirs = libpyjet.library_dirs
-            libpyjet.libraries = 'fastjettools fastjet CGAL gmp'.split()
+            libpyjet.libraries = 'fastjetcontribfragile fastjettools fastjet CGAL gmp'.split()
             if platform.system() == 'Darwin':
                 libpyjet.extra_link_args.append(
                     '-Wl,-rpath,' + os.path.join(prefix, 'lib'))
