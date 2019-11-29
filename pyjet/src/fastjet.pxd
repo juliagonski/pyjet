@@ -19,11 +19,6 @@ cdef extern from "fastjet.h" namespace "fastjet::contrib":
                  const AxesDefinition&,
                  const MeasureDefinition&)
     
-    cdef cppclass JetFFMoments:
-        JetFFMoments()
-        JetFFMoments(double, double, int)
-        JetMedianBackgroundEstimator()
-
     cdef cppclass AxesDefinition:
         AxesDefinition()
 
@@ -41,7 +36,7 @@ cdef extern from "fastjet.h" namespace "fastjet::contrib":
         double result(PseudoJet&)
 
     cdef cppclass EnergyCorrelator:
-        #EnergyCorrelator() 
+        EnergyCorrelator() 
         EnergyCorrelator(unsigned int,
                          double,
                          Measure,

@@ -54,17 +54,18 @@ def calc_ecf(jet):
   result_1 = ECF1.result(jet)
   result_2 = ECF2.result(jet)
   result_3 = ECF3.result(jet)
+  #Confirmed that these match
   #C2:
-  c2 = result_3*result_1/np.power(result_2,2)
-  print('C2: ', c2)
+  #c2 = result_3*result_1/np.power(result_2,2)
+  #print('C2: ', c2)
   #D2: 
-  d2 = result_3*result_1*result_1*result_1/np.power(result_2,3)
-  print('D2: ', d2)
+  #d2 = result_3*result_1*result_1*result_1/np.power(result_2,3)
+  #print('D2: ', d2)
   # fjcontrib actually just has a function! 
-  #ECF_c2 = EnergyCorrelatorC2(beta, measure, strategy) 
-  #ECF_d2 = EnergyCorrelatorD2(beta, measure, strategy) 
-  #return [ECF_c2.result(jet), ECF_d2.result(jet)]
-  return [c2, d2]
+  ECF_c2 = EnergyCorrelatorC2(beta, measure, strategy) 
+  ECF_d2 = EnergyCorrelatorD2(beta, measure, strategy) 
+  #print('From dedicated tool: ', ECF_c2.result(jet), ECF_d2.result(jet))
+  return [ECF_c2.result(jet), ECF_d2.result(jet)]
 
 
 #---- Nsubjettiness

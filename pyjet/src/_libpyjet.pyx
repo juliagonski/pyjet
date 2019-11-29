@@ -119,8 +119,6 @@ cdef class EnergyCorrelator:
     """ Python wrapper class for fjcontrib EnergyCorrelator
     """
     cdef fastjet.EnergyCorrelator* ecf
-    #cdef fastjet.JetDefinition* jetdef
-    #cdef fastjet.JetFFMoments* jetmoms
 
     def __cinit__(self):
         self.ecf = NULL
@@ -139,17 +137,7 @@ cdef class EnergyCorrelator:
             _strategy = STRATEGY[strategy]
         except KeyError:
             raise ValueError("{0:r} is not a valid strategy".format(strategy))
-        ## test only
-        #cdef fastjet.JetAlgorithm _algo
-        #try:
-        #    _algo = JET_ALGORITHM['kt']
-        #except KeyError:
-        #    raise ValueError("{0:r} is not a valid jet algorithm".format('undefined'))
-        #if _measure is not None and _strategy is not None and N is not None and beta is not None: self.ecf = new fastjet.EnergyCorrelator(N, beta, _measure, _strategy)
-        #self.ecf = NULL
         self.ecf = new fastjet.EnergyCorrelator(N, beta,_measure,_strategy)
-        #self.jetdef = new fastjet.JetDefinition(_algo, 0.1)
-        #self.jetmoms = new fastjet.JetFFMoments(1.0,2.0,3) #test only
     
     def __dealloc__(self):
         del self.ecf
@@ -157,20 +145,72 @@ cdef class EnergyCorrelator:
     def result(self, PseudoJet pseudojet):
         """ ECF result
         """
-        #cdef ecf_result = self.ecf.result(pseudojet.jet)
-        return 1.0
-
-#TODO
-cdef class EnergyCorrelatorD2:
-    """ Python wrapper class for fjcontrib EnergyCorrelator
-    """
-    cdef fastjet.EnergyCorrelatorD2* ecf
+        cdef ecf_result = self.ecf.result(pseudojet.jet)
+        return ecf_result
 
 cdef class EnergyCorrelatorC2:
     """ Python wrapper class for fjcontrib EnergyCorrelator
     """
     cdef fastjet.EnergyCorrelatorC2* ecf
+    def __cinit__(self):
+        self.ecf = NULL
 
+    def __init__(self, double beta,
+                         str measure = 'pt_R', 
+                         str strategy = 'storage_array'):
+        cdef fastjet.Measure _measure 
+        try:
+            _measure = MEASURE[measure]
+        except KeyError:
+            raise ValueError("{0:r} is not a valid measure".format(measure))
+        cdef fastjet.Strategy _strategy 
+        try:
+            _strategy = STRATEGY[strategy]
+        except KeyError:
+            raise ValueError("{0:r} is not a valid strategy".format(strategy))
+        self.ecf = new fastjet.EnergyCorrelatorC2(beta,_measure,_strategy)
+    
+    def __dealloc__(self):
+        del self.ecf
+
+    def result(self, PseudoJet pseudojet):
+        """ ECF result
+        """
+        cdef ecf_result = self.ecf.result(pseudojet.jet)
+        return ecf_result
+
+cdef class EnergyCorrelatorD2:
+    """ Python wrapper class for fjcontrib EnergyCorrelator
+    """
+    cdef fastjet.EnergyCorrelatorD2* ecf
+    def __cinit__(self):
+        self.ecf = NULL
+
+    def __init__(self, double beta,
+                         str measure = 'pt_R', 
+                         str strategy = 'storage_array'):
+        cdef fastjet.Measure _measure 
+        try:
+            _measure = MEASURE[measure]
+        except KeyError:
+            raise ValueError("{0:r} is not a valid measure".format(measure))
+        cdef fastjet.Strategy _strategy 
+        try:
+            _strategy = STRATEGY[strategy]
+        except KeyError:
+            raise ValueError("{0:r} is not a valid strategy".format(strategy))
+        self.ecf = new fastjet.EnergyCorrelatorD2(beta,_measure,_strategy)
+    
+    def __dealloc__(self):
+        del self.ecf
+
+    def result(self, PseudoJet pseudojet):
+        """ ECF result
+        """
+        cdef ecf_result = self.ecf.result(pseudojet.jet)
+        return ecf_result
+
+#TODO
 cdef class NsubjettinessRatio:
     """ Python wrapper class for fjcontrib Nsubjettiness
     """
