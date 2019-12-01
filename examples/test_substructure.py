@@ -22,8 +22,7 @@ import h5py
 import numpy as np 
 import matplotlib.pyplot as plt
 import pandas as pd
-#from skhep.math.vectors import *
-import skhep
+from skhep.math.vectors import *
 #from scipy.special import softmax
 import pickle
 import glob
@@ -81,6 +80,7 @@ def calc_tau(jet):
   tau_1 = Nsub_1.result(jet)
   tau_2 = Nsub_2.result(jet)
   tau_3 = Nsub_3.result(jet)
+  #print('Tau1: ' , tau_1, ', tau_2: ' , tau_2, ', tau_3: ', tau_3)
 
   return [tau_1,tau_2,tau_3]
 #-------------------------------------------------------------------
@@ -93,6 +93,7 @@ def calc_tauratio(jet):
   tau_21 = Nsub_21.result(jet)
   tau_23 = Nsub_23.result(jet)
   tau_13 = Nsub_13.result(jet)
+  #print('Tau21: ' , tau_21, ', tau_23: ' , tau_23, ', tau_13: ', tau_13)
 
   return [tau_21,tau_23,tau_13]
 

@@ -140,10 +140,6 @@ cdef class NormalizedMeasure(MeasureDefinition):
     def __cinit__(self, double beta, double R0):
         self.derivedptr = new fastjet.NormalizedMeasure(beta, R0)
         self.baseptr = self.derivedptr
-  
-    #def __init__(self, double beta,
-    #                     double R0):
-    #    self.derivedptr = new fastjet.NormalizedMeasure(beta,R0)
 
     def __dealloc__(self):
         del self.derivedptr
@@ -250,34 +246,47 @@ cdef class NsubjettinessRatio:
     """ Python wrapper class for fjcontrib Nsubjettiness
     """
     cdef fastjet.NsubjettinessRatio* nsub
+    def __cinit__(self):
+        self.nsub = NULL
+ 
+    def __init__(self, int N, int M,
+                         AxesDefinition axes_def, 
+                         MeasureDefinition measure_def):
+        #if measure_def is not None: 
+        #  if axes_def is not None: 
+        self.nsub = new fastjet.NsubjettinessRatio(N, M, deref(axes_def.baseptr), deref(measure_def.baseptr))
+
+    def __dealloc__(self):
+        del self.nsub
+    
+    def result(self, PseudoJet pseudojet):
+        """ NSub tau result
+        """
+        cdef nsub_result = self.nsub.result(pseudojet.jet)
+        return nsub_result
 
 cdef class Nsubjettiness:
     """ Python wrapper class for fjcontrib Nsubjettiness
     """
     cdef fastjet.Nsubjettiness* nsub
-
     def __cinit__(self):
         self.nsub = NULL
  
     def __init__(self, int N,
-                         axes_def = '', 
-                         measure_def = ''):
-        #cdef fastjet.AxesDef _measure 
-        #try:
-        #    _axesdef = AXES[axes_def]
-        #except KeyError:
-        #    raise ValueError("{0:r} is not a valid measure".format(measure))
-        #cdef fastjet.Strategy _strategy 
-        #try:
-        #    _measure = MEASURE[]
-        #except KeyError:
-        #    raise ValueError("{0:r} is not a valid strategy".format(strategy))
-        #if _measure is not None: 
-        #  if _strategy is not None: self.ecf = new fastjet.EnergyCorrelator(N, beta, _measure, _strategy)
-        self.nsub = NULL
+                         AxesDefinition axes_def, 
+                         MeasureDefinition measure_def):
+        #if measure_def is not None: 
+        #  if axes_def is not None: 
+        self.nsub = new fastjet.Nsubjettiness(N, deref(axes_def.baseptr), deref(measure_def.baseptr))
 
     def __dealloc__(self):
         del self.nsub
+    
+    def result(self, PseudoJet pseudojet):
+        """ NSub tau result
+        """
+        cdef nsub_result = self.nsub.result(pseudojet.jet)
+        return nsub_result
 
 
 cdef class ClusterSequence:

@@ -7,18 +7,6 @@ cdef extern from "fastjet.h":
 
 cdef extern from "fastjet.h" namespace "fastjet::contrib":
     #This could be not right yet
-    cdef cppclass Nsubjettiness:
-        Nsubjettiness()
-        Nsubjettiness(int,
-                 const AxesDefinition&,
-                 const MeasureDefinition&)
-
-    cdef cppclass NsubjettinessRatio:
-        NsubjettinessRatio()
-        NsubjettinessRatio(int,int,
-                 const AxesDefinition&,
-                 const MeasureDefinition&)
-    
     cdef cppclass AxesDefinition:
         AxesDefinition() except +
     cdef cppclass KT_Axes(AxesDefinition):
@@ -28,6 +16,21 @@ cdef extern from "fastjet.h" namespace "fastjet::contrib":
         MeasureDefinition(double, double) except +
     cdef cppclass NormalizedMeasure(MeasureDefinition):
         NormalizedMeasure(double, double) except + 
+    
+    cdef cppclass Nsubjettiness:
+        Nsubjettiness()
+        Nsubjettiness(int,
+                 AxesDefinition&,
+                 MeasureDefinition&)
+        double result(PseudoJet&)
+
+    cdef cppclass NsubjettinessRatio:
+        NsubjettinessRatio()
+        NsubjettinessRatio(int,int,
+                 AxesDefinition&,
+                 MeasureDefinition&)
+        double result(PseudoJet&)
+    
 
     cdef cppclass EnergyCorrelatorC2:
         EnergyCorrelatorC2()
