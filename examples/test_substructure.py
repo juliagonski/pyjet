@@ -31,7 +31,7 @@ from pprint import pprint
 
 import sys 
 sys.path.append("/Users/juliagonski/Documents/Columbia/Physics/yXH/test_pyjet_extfastjet/pyjet")
-from pyjet import DTYPE_PTEPM,ClusterSequence,JetDefinition,PseudoJet,cluster,EnergyCorrelator,EnergyCorrelatorC2,EnergyCorrelatorD2,Nsubjettiness,NsubjettinessRatio
+from pyjet import DTYPE_PTEPM,ClusterSequence,JetDefinition,PseudoJet,cluster,EnergyCorrelator,EnergyCorrelatorC2,EnergyCorrelatorD2,Nsubjettiness,NsubjettinessRatio,KT_Axes,NormalizedMeasure
 #JetFFMoments
 
 
@@ -74,7 +74,7 @@ def calc_tau(jet):
   #axes_def = contrib::KT_Axes() #from athena 
   #measure_def= contrib::NormalizedMeasure() #these are classes...  fastjet::contrib::KT_Axes kt_axes
   axes_def = KT_Axes()
-  measure_def = NormalizedMeasure()
+  measure_def = NormalizedMeasure(1.0,1.0) #beta, R0
   Nsub_1 = Nsubjettiness(1,axes_def,measure_def)
   Nsub_2 = Nsubjettiness(2,axes_def,measure_def)
   Nsub_3 = Nsubjettiness(3,axes_def,measure_def)
@@ -86,7 +86,7 @@ def calc_tau(jet):
 #-------------------------------------------------------------------
 def calc_tauratio(jet):
   axes_def = KT_Axes()
-  measure_def = NormalizedMeasure()
+  measure_def = NormalizedMeasure(1.0,1.0)
   Nsub_21 = NsubjettinessRatio(2,1,axes_def,measure_def)
   Nsub_23 = NsubjettinessRatio(2,3,axes_def,measure_def)
   Nsub_13 = NsubjettinessRatio(1,3,axes_def,measure_def)

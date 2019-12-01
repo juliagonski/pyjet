@@ -98,22 +98,57 @@ cdef class JetDefinition:
         del self.jdef
 
 
-cdef class AxesDefinition:
+
+cdef class AxesDefinition: #don't instantiate anything
     """ Python wrapper class for fjcontrib AxesDefinition
     """
-    cdef fastjet.AxesDefinition* axes_def
+    cdef fastjet.AxesDefinition* baseptr
     
     def __cinit__(self):
-        self.axes_def = NULL
-    
-    def __init__(self):
-      #self.axes_def = new fastjet.AxesDefinition()
-      self.axes_def = NULL
-    
-    def __dealloc__(self):
-        del self.axes_def
+        pass
 
+    def KT_Axes(self):
+        pass
+cdef class KT_Axes(AxesDefinition):
+    """ Python wrapper class for fjcontrib AxesDefinition
+    """
+    cdef fastjet.KT_Axes* derivedptr
+
+    def __cinit__(self):
+      self.derivedptr = new fastjet.KT_Axes()
+      self.baseptr = self.derivedptr
   
+    def __dealloc__(self):
+        del self.derivedptr
+
+
+cdef class MeasureDefinition: #don't instantiate anything
+    """ Python wrapper class for fjcontrib MeasureDefinition
+    """
+    cdef fastjet.MeasureDefinition* baseptr
+    
+    def __cinit__(self):
+        pass
+
+    def NormalizedMeasure(self, double beta, double R0):
+        pass
+cdef class NormalizedMeasure(MeasureDefinition):
+    """ Python wrapper class for fjcontrib MeasureDefinition
+    """
+    cdef fastjet.NormalizedMeasure* derivedptr
+
+    def __cinit__(self, double beta, double R0):
+        self.derivedptr = new fastjet.NormalizedMeasure(beta, R0)
+        self.baseptr = self.derivedptr
+  
+    #def __init__(self, double beta,
+    #                     double R0):
+    #    self.derivedptr = new fastjet.NormalizedMeasure(beta,R0)
+
+    def __dealloc__(self):
+        del self.derivedptr
+
+
 
 cdef class EnergyCorrelator:
     """ Python wrapper class for fjcontrib EnergyCorrelator

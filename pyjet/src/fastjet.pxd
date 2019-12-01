@@ -20,10 +20,14 @@ cdef extern from "fastjet.h" namespace "fastjet::contrib":
                  const MeasureDefinition&)
     
     cdef cppclass AxesDefinition:
-        AxesDefinition()
+        AxesDefinition() except +
+    cdef cppclass KT_Axes(AxesDefinition):
+        KT_Axes() except +
 
     cdef cppclass MeasureDefinition:
-        MeasureDefinition()
+        MeasureDefinition(double, double) except +
+    cdef cppclass NormalizedMeasure(MeasureDefinition):
+        NormalizedMeasure(double, double) except + 
 
     cdef cppclass EnergyCorrelatorC2:
         EnergyCorrelatorC2()
