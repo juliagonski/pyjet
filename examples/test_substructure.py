@@ -6,14 +6,14 @@
 
 ##########TODO 
 #Split12, Split23: KTsplitting tool
+#ZCut12 (needs KTSplitting tool)
 #Aplanarity: implement SphericityTensor/CenterOfMassTool
+#Qw
 #DONE:
 #C2,D2 (ECF = energy correlation functions) 
 #Tau1, tau2, tau3 (Tau1_wta), Tau21, Tau23, Tau13 
-#Qw
 #PlanarFlow
 #Angularity
-#ZCut12 
 #KtDR
 #
 
@@ -101,11 +101,23 @@ def calc_tauratio(jet):
 #---- Kt splitting
 #-------------------------------------------------------------------
 def calc_ktsplit(jet):
-  split12 = -1 #TODO
+
+  split12 = -1 
   split23 = -1
+
+  ekt_jd = JetDefinition('kt',1.5) #E_scheme,Best)
+  kt_seq_excl = ClusterSequence(jet.constituents_array(),ekt_jd)
+  old_kt_jets = kt_seq_excl.inclusive_jets()
+  old_kt_jets.sort() #sorted backwards
+  kt_jets = np.flip(old_kt_jets)
+  kt_jet = kt_jets[0]
+  #print('kt jet: ' , kt_jet)
+  split12 = 1.5*sqrt(kt_seq_excl.exclusive_subdmerge(kt_jet, 1))
+  split23 = 1.5*sqrt(kt_seq_excl.exclusive_subdmerge(kt_jet, 2))
+  #print('Split12: ' , split12, ', split23: ' , split23)
+
   return [split12, split23]
 
- 
 
 #---- Simple vars
 #-------------------------------------------------------------------
@@ -202,11 +214,17 @@ def calc_zcut(jet):
   if max_cluster_hist_index == -1: return 0.0 #None of the subjets were split
 
   #split = KtSplittingScale(m_nSubJets)
-  #dmin = pow(split.result(jet), 2.0)
+  old_kt_jets = kt_clust_seq.inclusive_jets()
+  old_kt_jets.sort() #sorted backwards
+  kt_jets = np.flip(old_kt_jets)
+  kt_jet = kt_jets[0]
+  #print('kt jet: ' , kt_jet)
+  split = 1.5*sqrt(kt_clust_seq.exclusive_subdmerge(kt_jet, m_nSubJets))
+  dmin = pow(split, 2.0)
 
   zcut = -1
-  #if dmin == 0: zcut = 0
-  #TODO else: zcut = dmin / (dmin + lastSplitSubjet.m2())
+  if dmin == 0: zcut = 0
+  else: zcut = np.divide(dmin, dmin + lastSplitSubjet.m2)
 
   return zcut
 
@@ -384,10 +402,10 @@ if __name__ == "__main__":
         else:
           #calc substructure variables 
           #ECF
-          c2, d2 = calc_ecf(jet)
+          #c2, d2 = calc_ecf(jet)
           #Nsubjettiness
-          tau1,tau2,tau3 = calc_tau(jet)
-          tau21,tau23,tau13 = calc_tauratio(jet)
+          #tau1,tau2,tau3 = calc_tau(jet)
+          #tau21,tau23,tau13 = calc_tauratio(jet)
           #Kt splitting
           split12,split23 = calc_ktsplit(jet)
           #Simple vars

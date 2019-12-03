@@ -241,7 +241,6 @@ cdef class EnergyCorrelatorD2:
         cdef ecf_result = self.ecf.result(pseudojet.jet)
         return ecf_result
 
-#TODO
 cdef class NsubjettinessRatio:
     """ Python wrapper class for fjcontrib Nsubjettiness
     """
@@ -347,6 +346,10 @@ cdef class ClusterSequence:
         if sort:
             jets = fastjet.sorted_by_pt(jets)
         return vector_to_list(jets)
+
+    def exclusive_subdmerge(self, PseudoJet jet, int nsub):
+        cdef dij = self.sequence.exclusive_subdmerge(jet.jet, nsub) 
+        return dij
 
     def unclustered_particles(self):
         cdef vector[fastjet.PseudoJet] jets = self.sequence.unclustered_particles()
@@ -481,6 +484,10 @@ cdef class PseudoJet:
     @property
     def mass(self):
         return self.jet.m()
+
+    @property
+    def m2(self):
+        return self.jet.m2()
 
     @property
     def e(self):
