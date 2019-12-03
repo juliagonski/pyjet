@@ -402,6 +402,13 @@ cdef class PseudoJet:
     cdef fastjet.PseudoJet jet
     cdef vector[fastjet.PseudoJet] constits
     cdef PseudoJetUserInfo* userinfo
+    #Don't know correct syntax for this
+    #cdef fastjet.PseudoJet operator+
+    #cdef fastjet.PseudoJet operator-
+    #cdef fastjet.PseudoJet operator*
+    #cdef fastjet.PseudoJet operator*
+    #cdef fastjet.PseudoJet operator/
+
 
     @staticmethod
     cdef inline PseudoJet wrap(fastjet.PseudoJet& jet):

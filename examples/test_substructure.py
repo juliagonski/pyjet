@@ -5,11 +5,11 @@
 #-- in pyjet: make  (or python3 setup.py build_ext --inplace)
 
 ##########TODO 
-#Split12, Split23: KTsplitting tool
-#ZCut12 (needs KTSplitting tool)
 #Aplanarity: implement SphericityTensor/CenterOfMassTool
 #Qw
-#DONE:
+##########DONE:
+#Split12, Split23: KTsplitting tool
+#ZCut12 (needs KTSplitting tool)
 #C2,D2 (ECF = energy correlation functions) 
 #Tau1, tau2, tau3 (Tau1_wta), Tau21, Tau23, Tau13 
 #PlanarFlow
@@ -167,7 +167,10 @@ def calc_aplanarity(jet):
 
 #-------------------------------------------------------------------
 def calc_qw(jet):
+#### this so far is only implemented in "normal mode": 
+#### https://gitlab.cern.ch/atlas/athena/blob/21.2/Reconstruction/Jet/JetSubStructureUtils/Root/Qw.cxx#L68
 
+  qw = -1
   constituents = jet.constituents_array()
   if len(constituents)< 3: return 0
 
@@ -175,14 +178,15 @@ def calc_qw(jet):
   cs = cluster(constituents, R=1.0, p=-1)
   scaleF = 1.
   outjets= cs.exclusive_jets(3) #TODO 
-  #print(outjets)
+  m0_jet = LorentzVector(outjets[0].px, outjets[0].py, outjets[0].pz, outjets[0].e)
+  m1_jet = LorentzVector(outjets[1].px, outjets[1].py, outjets[1].pz, outjets[1].e)
+  m2_jet = LorentzVector(outjets[2].px, outjets[2].py, outjets[2].pz, outjets[2].e)
 
-  #m12 = (outjets[0]+outjets[1]).mass
-  #m23 = (outjets[2]+outjets[1]).mass
-  #m13 = (outjets[2]+outjets[0]).mass
+  m12 = (m0_jet + m1_jet).m
+  m23 = (m2_jet + m1_jet).m
+  m13 = (m2_jet + m0_jet).m
 
-  #TODO qw = scaleF*np.min(m12, np.min(m23,m13) )
-  qw = -1
+  qw = scaleF*np.minimum( m12, np.minimum(m23,m13) )
 
   return qw
 

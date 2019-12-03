@@ -72,6 +72,11 @@ cdef extern from "fastjet.h" namespace "fastjet":
     cdef cppclass PseudoJet:
         PseudoJet(const double, const double, const double, const double)
         PseudoJet()
+        PseudoJet operator+(const PseudoJet &, const PseudoJet &)
+        PseudoJet operator-(const PseudoJet &, const PseudoJet &)
+        PseudoJet operator*(double, const PseudoJet &)
+        PseudoJet operator*(const PseudoJet &, double)
+        PseudoJet operator/(const PseudoJet &, double)
         vector[PseudoJet] constituents()
         double E()
         double Et()
