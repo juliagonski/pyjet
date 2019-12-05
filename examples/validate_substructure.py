@@ -26,6 +26,7 @@ from skhep.math.vectors import *
 import pickle
 import glob
 from pprint import pprint
+from ROOT import TLorentzVector
 
 import sys 
 sys.path.append("/Users/juliagonski/Documents/Columbia/Physics/yXH/test_pyjet_extfastjet/pyjet")
@@ -57,7 +58,7 @@ def calc_ecf(jet):
   #c2 = result_3*result_1/np.power(result_2,2)
   #print('C2: ', c2)
   #D2: 
-  #d2 = result_3*result_1*result_1*result_1/np.power(result_2,3)
+  #d2 = np.divide(result_3*np.power(result_1,3), np.power(result_2,3))
   #print('D2: ', d2)
   # fjcontrib actually just has a function! 
   ECF_c2 = EnergyCorrelatorC2(beta, measure, strategy) 
@@ -356,12 +357,11 @@ def calc_angularity(jet):
 
   for tclu in constit_pseudojets:
     tclus = LorentzVector(tclu.px,tclu.py,tclu.pz,tclu.e)
-    #theta_i = jet_p4.Angle(tclus.Vect())
-    v0 = [tclu.px,tclu.py,tclu.pz]
-    v1 = [jet.px, jet.py, jet.pz]
-    v0_u = v0 / np.linalg.norm(v0)
-    v1_u = v0 / np.linalg.norm(v1)
-    theta_i = np.arccos(np.clip(np.dot(v0_u, v1_u), -1.0, 1.0))
+    #t_theta_i = t_jet_p4.Angle(t_tclus.Vect())
+    vec1 = [tclu.px,tclu.py,tclu.pz]
+    vec2 = [jet.px, jet.py, jet.pz]
+    theta_i=np.arccos(np.dot(vec1,vec2)/(np.linalg.norm(vec1)*np.linalg.norm(vec2)))
+
     sintheta_i = sin(theta_i)
     if sintheta_i == 0: continue #avoid FPE
     e_theta_i_a2 = tclu.e*pow(sintheta_i,m_a2)*pow(1-cos(theta_i),1-m_a2)
@@ -470,7 +470,7 @@ if __name__ == "__main__":
 
           print('       My script;            original:')
           print('c2: ', c2, ',    ', fat_jets[i]["C2"])
-          print('d2: ', c2, ',    ', fat_jets[i]["D2"])
+          print('d2: ', d2, ',    ', fat_jets[i]["D2"])
           print('Aplanarity: ', aplanarity, ',        ', fat_jets[i]["Aplanarity"])
           print('Split12: ', split12, ',     ', fat_jets[i]["Split12"])
           print('Split23: ', split23, ',     ', fat_jets[i]["Split23"])
