@@ -396,9 +396,14 @@ if __name__ == "__main__":
 
   #print(dir(pyjet))
 
-  f = pd.read_hdf("/Users/juliagonski/Documents/Columbia/Physics/yXH/lhcOlympics2020/events_anomalydetection.h5")
-  events_combined = f.T
-  np.shape(events_combined)
+  #f = pd.read_hdf("/Users/juliagonski/Documents/Columbia/Physics/yXH/lhcOlympics2020/events_anomalydetection.h5")
+  #f_ref = pd.read_hdf("/Users/juliagonski/Documents/Columbia/Physics/yXH/lhcOlympics2020/user.miochoa.19650387._000001.output.h5")
+  f_ref = h5py.File("examples/user.miochoa.19650387._000001.output.h5", "r")
+  #events_combined = f.T
+  #np.shape(events_combined)
+
+  jets_orig = f_ref["fat_jet_constituents"]
+  fat_jets = f_ref["fat_jet"]
 
   n_consts = 11
   n_start = 10
@@ -413,18 +418,20 @@ if __name__ == "__main__":
     print('Current n_Consts: ', n_c)
 
     #for mytype in ['background','signal']:
-    for i in range(100): #len(events_combined)):
+    for i in range(100): #len(fat_jet):
       if (i%10000==0):
           print(i)
           pass
-      issignal = events_combined[i][2100]
-      pseudojets_input = np.zeros(len([x for x in events_combined[i][::3] if x > 0]), dtype=DTYPE_PTEPM)
-      for j in range(700): #number of hadrons per event
-          if (events_combined[i][j*3]>1.0):   #min pT cut, could make this tighter
-              pseudojets_input[j]['pT'] = events_combined[i][j*3]
-              pseudojets_input[j]['eta'] = events_combined[i][j*3+1]
-              pseudojets_input[j]['phi'] = events_combined[i][j*3+2]
-              #print('Constituent small R jet pt: ', pseudojets_input[j]['pT'])
+
+      #this is all clustering stuff
+      #pseudojets_input = np.zeros(len([x for x in jets_orig[i][0][::3] if x > 0]), dtype=DTYPE_PTEPM)
+      pseudojets_input = np.zeros(shape=[50], dtype=DTYPE_PTEPM)
+      for j in range(50): #number of hadrons per event
+          if (jets_orig[i][j]["pt"] >1.0):   #min pT cut to enter clustering, could make this tighter
+              pseudojets_input[j][0] = jets_orig[i][j]["pt"]
+              pseudojets_input[j][1] = jets_orig[i][j]["eta"]
+              pseudojets_input[j][2] = jets_orig[i][j]["phi"]
+              #print('Constituent small R jet pt: ', pseudojets_input[j][0])
               pass
           pass
     
@@ -434,11 +441,12 @@ if __name__ == "__main__":
       ############################
       ### Substructure variables
       ############################
-      #print('Number of clustered large-R jets: ', len(jets))
+      #print('Number of clustered large-R jets: ', len(jets), " for event :", i)
       for jet in jets: 
+        #print('pt: ', Jet["pt"], ', eta: ' , Jet["eta"], ', phi:' , Jet["phi"], ', mass: ' , Jet["mass"])
+
         hlvs_signal = []
-        
-        #print('Jet pt: ' , jet.pt, ", jet mass: ", jet.mass)
+
         if jet.pt < 150 or jet.mass < 50: 
           #print('Low pT/low mass jet, not processing')
           continue
@@ -460,9 +468,20 @@ if __name__ == "__main__":
           qw = calc_qw(jet) ##do we have a massCut or SmallSubjets scenario??
           tmp_hlvs = [c2,d2,tau1,tau2,tau3,tau21,tau23,tau13,aplanarity,split12,split23, planarFlow, angularity, KtDR, zcut, qw]
 
+          print('       My script;            original:')
+          print('c2: ', c2, ',    ', fat_jets[i]["C2"])
+          print('d2: ', c2, ',    ', fat_jets[i]["D2"])
+          print('Aplanarity: ', aplanarity, ',        ', fat_jets[i]["Aplanarity"])
+          print('Split12: ', split12, ',     ', fat_jets[i]["Split12"])
+          print('Split23: ', split23, ',     ', fat_jets[i]["Split23"])
+          print('KtDR: ', KtDR, ',         ', fat_jets[i]["KtDR"])
+          print('Planar flow: ', planarFlow, ',    ', fat_jets[i]["PlanarFlow"])
+          print('Angularity: ', angularity, ',    ', fat_jets[i]["Angularity"])
+          print('Zcut12: ', zcut, ',       ', fat_jets[i]["ZCut12"])
+          print('Qw: ', qw, ',    ', fat_jets[i]["Qw"])
+ 
           #push to respective groups (signal, validation, training)
-          if issignal: 
-            hlvs_signal.append(tmp_hlvs)
+          hlvs_signal.append(tmp_hlvs)
         pass
  
         if len(hlvs_signal) >= 0: 

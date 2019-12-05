@@ -6,7 +6,6 @@ cdef extern from "fastjet.h":
     cdef void raise_py_error()
 
 cdef extern from "fastjet.h" namespace "fastjet::contrib":
-    #This could be not right yet
     cdef cppclass AxesDefinition:
         AxesDefinition() except +
     cdef cppclass KT_Axes(AxesDefinition):
