@@ -6,16 +6,15 @@
 
 ##########TODO 
 #Aplanarity: implement SphericityTensor/CenterOfMassTool
-#Qw
 ##########DONE:
 #Split12, Split23: KTsplitting tool
 #ZCut12 (needs KTSplitting tool)
+#Qw
 #C2,D2 (ECF = energy correlation functions) 
 #Tau1, tau2, tau3 (Tau1_wta), Tau21, Tau23, Tau13 
 #PlanarFlow
 #Angularity
 #KtDR
-#
 
 
 import h5py    
@@ -121,13 +120,53 @@ def calc_ktsplit(jet):
 
 #---- Simple vars
 #-------------------------------------------------------------------
+def boost(jet, bx, by, bz):
+   b2 = np.power(bx,2) + np.power(by,2) + np.power(bz,2)
+   gamma = np.divide(1.,np.sqrt( 1. - b2 ))
+   bp = bx * jet.px + by * jet.py + bz * jet.pz
+   if b2 > 0.: gamma2 = np.divide(gamma - 1.0, b2)
+   else: gamma2 = 0.
+
+   xp = jet.px + gamma2 * bp * bx - gamma * bx * jet.t
+   yp = jet.py + gamma2 * bp * by - gamma * by * jet.t
+   zp = jet.pz + gamma2 * bp * bz - gamma * bz * jet.t
+   tp = gamma * ( jet.t - bp )
+
+   return LorentzVector(xp, yp, zp, tp)
+
+#-------------------------------------------------------------------
+def boost_to_center_of_mass(jet):
+
+  clusters = []
+  if jet.e < 1e-20:#FPE
+    return clusters
+
+  bx = np.divide(jet.px, jet.e)
+  by = np.divide(jet.py, jet.e)
+  bz = np.divide(jet.pz, jet.e)
+  #print('bx ' , bx, ' by,  ' , by, ' bz ', bz)
+
+  if bx*bx + by*by + bz*bz >= 1:  # Faster than light
+    return clusters
+
+  constit_pseudojets = jet.constituents()
+  for i1 in range(len(constit_pseudojets)):
+    v = LorentzVector(constit_pseudojets[i1].px, constit_pseudojets[i1].py,constit_pseudojets[i1].pz,constit_pseudojets[i1].e)
+    #print('LorentzVector: ' , v)
+    v = boost(v, -bx,-by,-bz)
+    #print('LorentzVector after boosting: ' , v)
+    clusters.append(v)
+
+  return clusters
+
+#-------------------------------------------------------------------
 def calc_aplanarity(jet):
   Aplanarity = -999.*1000
 
-  #clusters = boostToCenterOfMass(jet, jet.constituents()); TODO
-  if clusters.size() < 2: return Aplanarity
+  clusters = boost_to_center_of_mass(jet) 
+  if len(clusters) < 2: return Aplanarity
 
-  MomentumTensor = TMatrixD(3,3)
+  MomentumTensor = np.empty((3,3))
   P2Sum = 0
 
   val00 = 0.0; val01 = 0.0; val02 = 0.0; val10 = 0.0; val11 = 0.0; val12 = 0.0; val20 = 0.0; val21 = 0.0; val22 = 0.0
@@ -157,13 +196,81 @@ def calc_aplanarity(jet):
     MomentumTensor[1,2] = val12
     MomentumTensor[2,2] = val22
 
-    aSVD = TDecompSVD(MomentumTensor)
-    Lambda = aSVD.GetSig()
-
+    u, Lambda, vh = np.linalg.svd(MomentumTensor) #unitary arrays, singular values, hermitian unitary
+    #print(u, s, vh)
     Aplanarity = 1.5*Lambda[2];
-    #delete aSVDA
 
   return Aplanarity
+
+#-------------------------------------------------------------------
+def calc_planarflow(jet):
+  PF = -1.0
+  if jet.mass == 0 or len(jet.constituents_array()) == 0: return PF
+  constit_pseudojets = jet.constituents()
+
+  MomentumTensor = np.empty((2,2))
+  #Planar flow
+  phi0=jet.phi
+  eta0=jet.eta
+
+  nvec = np.zeros(shape=[3])
+  nvec[0]=(np.cos(phi0)/np.cosh(eta0))
+  nvec[1]=(np.sin(phi0)/np.cosh(eta0))
+  nvec[2]=np.tanh(eta0)
+
+  #this is the rotation matrix
+  RotationMatrix = np.zeros(shape=[3,3])
+
+  mag3 = np.sqrt(nvec[0]*nvec[0] + nvec[1]*nvec[1]+ nvec[2]*nvec[2])
+  mag2 = np.sqrt(nvec[0]*nvec[0] + nvec[1]*nvec[1])
+
+  #if rotation axis is null
+  if mag3 <= 0: return PF
+
+  ctheta0 = nvec[2]/mag3
+  stheta0 = mag2/mag3
+  cphi0 = nvec[0]/mag2 if mag2>0. else 0.
+  sphi0 = nvec[1]/mag2 if mag2>0. else 0.
+
+  RotationMatrix[0,0] = ctheta0*cphi0
+  RotationMatrix[0,0] =- ctheta0*cphi0
+  RotationMatrix[0,1] =- ctheta0*sphi0
+  RotationMatrix[0,2] = stheta0
+  RotationMatrix[1,0] = sphi0
+  RotationMatrix[1,1] =- 1.*cphi0
+  RotationMatrix[1,2] = 0.
+  RotationMatrix[2,0] = stheta0*cphi0
+  RotationMatrix[2,1] = stheta0*sphi0
+  RotationMatrix[2,2] = ctheta0
+
+  val00 = 0.0; val10 = 0.0; val01 = 0.0; val11 = 0.0
+  for cp in constit_pseudojets:
+    p = LorentzVector(cp.px,cp.py,cp.pz,cp.e)
+    n=1./(cp.e*jet.mass)
+    px_rot = RotationMatrix[0,0] * (p.px)+RotationMatrix[0,1] * (p.py)+RotationMatrix[0,2]*(p.pz)
+    py_rot = RotationMatrix[1,0] * (p.px)+RotationMatrix[1,1] * (p.py)+RotationMatrix[1,2]*(p.pz)
+    pz_rot = RotationMatrix[2,0] * (p.px)+RotationMatrix[2,1] * (p.py)+RotationMatrix[2,2]*(p.pz)
+
+    prot = LorentzVector(0.0,0.0,0.0,0.0)  
+    prot.setpxpypze(px_rot, py_rot, pz_rot, p.e )
+
+    val00 += n * prot.px * prot.px
+    val01 += n * prot.py * prot.px
+    val10 += n * prot.px * prot.py
+    val11 += n * prot.py * prot.py
+  
+  MomentumTensor[0,0] = val00
+  MomentumTensor[0,1] = val01
+  MomentumTensor[0,0] = val10
+  MomentumTensor[1,1] = val11
+
+  #eigen = TMatrixDSymEigen(MomentumTensor)
+  Lambda, eigen = np.linalg.eig(MomentumTensor)
+  num = 4*Lambda[0]*Lambda[1]
+  den = (Lambda[0]+Lambda[1]) * (Lambda[0]+Lambda[1])
+  if np.abs(den) < 1.e-20: return PF
+  PF = num/den
+  return PF
 
 #-------------------------------------------------------------------
 def calc_qw(jet):
@@ -177,7 +284,7 @@ def calc_qw(jet):
   #Build the subjets 
   cs = cluster(constituents, R=1.0, p=-1)
   scaleF = 1.
-  outjets= cs.exclusive_jets(3) #TODO 
+  outjets= cs.exclusive_jets(3) 
   m0_jet = LorentzVector(outjets[0].px, outjets[0].py, outjets[0].pz, outjets[0].e)
   m1_jet = LorentzVector(outjets[1].px, outjets[1].py, outjets[1].pz, outjets[1].e)
   m2_jet = LorentzVector(outjets[2].px, outjets[2].py, outjets[2].pz, outjets[2].e)
@@ -187,6 +294,7 @@ def calc_qw(jet):
   m13 = (m2_jet + m0_jet).m
 
   qw = scaleF*np.minimum( m12, np.minimum(m23,m13) )
+  #print('Qw: ' , qw)
 
   return qw
 
@@ -264,75 +372,6 @@ def calc_angularity(jet):
   return Angularity2
 
 
-#-------------------------------------------------------------------
-def calc_planarflow(jet):
-  PF = -1.0
-  if jet.mass == 0 or len(jet.constituents_array()) == 0: return PF
-  constit_pseudojets = jet.constituents()
-
-  MomentumTensor = np.empty((2,2))
-  #Planar flow
-  phi0=jet.phi
-  eta0=jet.eta
-
-  nvec = np.zeros(shape=[3])
-  nvec[0]=(np.cos(phi0)/np.cosh(eta0))
-  nvec[1]=(np.sin(phi0)/np.cosh(eta0))
-  nvec[2]=np.tanh(eta0)
-
-  #this is the rotation matrix
-  RotationMatrix = np.zeros(shape=[3,3])
-
-  mag3 = np.sqrt(nvec[0]*nvec[0] + nvec[1]*nvec[1]+ nvec[2]*nvec[2])
-  mag2 = np.sqrt(nvec[0]*nvec[0] + nvec[1]*nvec[1])
-
-  #if rotation axis is null
-  if mag3 <= 0: return PF
-
-  ctheta0 = nvec[2]/mag3
-  stheta0 = mag2/mag3
-  cphi0 = nvec[0]/mag2 if mag2>0. else 0.
-  sphi0 = nvec[1]/mag2 if mag2>0. else 0.
-
-  RotationMatrix[0,0] = ctheta0*cphi0
-  RotationMatrix[0,0] =- ctheta0*cphi0
-  RotationMatrix[0,1] =- ctheta0*sphi0
-  RotationMatrix[0,2] = stheta0
-  RotationMatrix[1,0] = sphi0
-  RotationMatrix[1,1] =- 1.*cphi0
-  RotationMatrix[1,2] = 0.
-  RotationMatrix[2,0] = stheta0*cphi0
-  RotationMatrix[2,1] = stheta0*sphi0
-  RotationMatrix[2,2] = ctheta0
-
-  val00 = 0.0; val10 = 0.0; val01 = 0.0; val11 = 0.0
-  for cp in constit_pseudojets:
-    p = LorentzVector(cp.px,cp.py,cp.pz,cp.e)
-    n=1./(cp.e*jet.mass)
-    px_rot = RotationMatrix[0,0] * (p.px)+RotationMatrix[0,1] * (p.py)+RotationMatrix[0,2]*(p.pz)
-    py_rot = RotationMatrix[1,0] * (p.px)+RotationMatrix[1,1] * (p.py)+RotationMatrix[1,2]*(p.pz)
-    pz_rot = RotationMatrix[2,0] * (p.px)+RotationMatrix[2,1] * (p.py)+RotationMatrix[2,2]*(p.pz)
-
-    prot = LorentzVector(0.0,0.0,0.0,0.0)  
-    prot.setpxpypze(px_rot, py_rot, pz_rot, p.e )
-
-    val00 += n * prot.px * prot.px
-    val01 += n * prot.py * prot.px
-    val10 += n * prot.px * prot.py
-    val11 += n * prot.py * prot.py
-  
-  MomentumTensor[0,0] = val00
-  MomentumTensor[0,1] = val01
-  MomentumTensor[0,0] = val10
-  MomentumTensor[1,1] = val11
-
-  #eigen = TMatrixDSymEigen(MomentumTensor)
-  Lambda, eigen = np.linalg.eig(MomentumTensor)
-  num = 4*Lambda[0]*Lambda[1]
-  den = (Lambda[0]+Lambda[1]) * (Lambda[0]+Lambda[1])
-  if np.abs(den) < 1.e-20: return PF
-  PF = num/den
-  return PF
 
 #-------------------------------------------------------------------
 def calc_ktdr(jet):
@@ -410,6 +449,7 @@ if __name__ == "__main__":
           #Nsubjettiness
           #tau1,tau2,tau3 = calc_tau(jet)
           #tau21,tau23,tau13 = calc_tauratio(jet)
+          aplanarity = calc_aplanarity(jet)
           #Kt splitting
           split12,split23 = calc_ktsplit(jet)
           #Simple vars
