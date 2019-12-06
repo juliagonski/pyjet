@@ -26,7 +26,7 @@ from skhep.math.vectors import *
 import pickle
 import glob
 from pprint import pprint
-from ROOT import TLorentzVector
+#from ROOT import TLorentzVector,TMatrixDSym,TMatrixDSymEigen,TVectorD
 
 import sys 
 sys.path.append("/Users/juliagonski/Documents/Columbia/Physics/yXH/test_pyjet_extfastjet/pyjet")
@@ -88,26 +88,26 @@ def calc_tauratio(jet):
   axes_def = KT_Axes()
   measure_def = NormalizedMeasure(1.0,1.0)
   Nsub_21 = NsubjettinessRatio(2,1,axes_def,measure_def)
-  Nsub_23 = NsubjettinessRatio(2,3,axes_def,measure_def)
-  Nsub_13 = NsubjettinessRatio(1,3,axes_def,measure_def)
+  Nsub_32 = NsubjettinessRatio(3,2,axes_def,measure_def)
+  Nsub_31 = NsubjettinessRatio(3,1,axes_def,measure_def)
   tau_21 = Nsub_21.result(jet)
-  tau_23 = Nsub_23.result(jet)
-  tau_13 = Nsub_13.result(jet)
+  tau_32 = Nsub_32.result(jet)
+  tau_31 = Nsub_31.result(jet)
   #print('Tau21: ' , tau_21, ', tau_23: ' , tau_23, ', tau_13: ', tau_13)
 
-  return [tau_21,tau_23,tau_13]
+  return [tau_21,tau_32,tau_31]
 
 
 #---- Kt splitting
 #-------------------------------------------------------------------
 def calc_ktsplit(jet):
-
   split12 = -1 
   split23 = -1
 
-  ekt_jd = JetDefinition('kt',1.5) #E_scheme,Best)
-  kt_seq_excl = ClusterSequence(jet.constituents_array(),ekt_jd)
-  old_kt_jets = kt_seq_excl.inclusive_jets()
+  #ekt_jd = JetDefinition('kt',1.5) #E_scheme,Best)
+  #kt_seq_excl = ClusterSequence(jet.constituents_array(), R=1.5, p=1)
+  kt_seq_excl = cluster(jet.constituents_array(), R=1.5, p=1)
+  old_kt_jets = kt_seq_excl.inclusive_jets() #large R jets
   old_kt_jets.sort() #sorted backwards
   kt_jets = np.flip(old_kt_jets)
   kt_jet = kt_jets[0]
@@ -209,14 +209,16 @@ def calc_planarflow(jet):
   if jet.mass == 0 or len(jet.constituents_array()) == 0: return PF
   constit_pseudojets = jet.constituents()
 
-  MomentumTensor = np.empty((2,2))
+  #MomentumTensor = np.empty((2,2))
+  MomentumTensor = np.zeros(shape=[2,2])
+  #MomentumTensor = TMatrixDSym(2)
   #Planar flow
   phi0=jet.phi
   eta0=jet.eta
 
   nvec = np.zeros(shape=[3])
-  nvec[0]=(np.cos(phi0)/np.cosh(eta0))
-  nvec[1]=(np.sin(phi0)/np.cosh(eta0))
+  nvec[0]=np.divide(np.cos(phi0), np.cosh(eta0))
+  nvec[1]=np.divide(np.sin(phi0), np.cosh(eta0))
   nvec[2]=np.tanh(eta0)
 
   #this is the rotation matrix
@@ -233,7 +235,6 @@ def calc_planarflow(jet):
   cphi0 = nvec[0]/mag2 if mag2>0. else 0.
   sphi0 = nvec[1]/mag2 if mag2>0. else 0.
 
-  RotationMatrix[0,0] = ctheta0*cphi0
   RotationMatrix[0,0] =- ctheta0*cphi0
   RotationMatrix[0,1] =- ctheta0*sphi0
   RotationMatrix[0,2] = stheta0
@@ -242,15 +243,16 @@ def calc_planarflow(jet):
   RotationMatrix[1,2] = 0.
   RotationMatrix[2,0] = stheta0*cphi0
   RotationMatrix[2,1] = stheta0*sphi0
-  RotationMatrix[2,2] = ctheta0
+  RotationMatrix[2,2] = ctheta0 
+  #print('Rotation Matrix:', RotationMatrix)
 
   val00 = 0.0; val10 = 0.0; val01 = 0.0; val11 = 0.0
   for cp in constit_pseudojets:
     p = LorentzVector(cp.px,cp.py,cp.pz,cp.e)
     n=1./(cp.e*jet.mass)
-    px_rot = RotationMatrix[0,0] * (p.px)+RotationMatrix[0,1] * (p.py)+RotationMatrix[0,2]*(p.pz)
-    py_rot = RotationMatrix[1,0] * (p.px)+RotationMatrix[1,1] * (p.py)+RotationMatrix[1,2]*(p.pz)
-    pz_rot = RotationMatrix[2,0] * (p.px)+RotationMatrix[2,1] * (p.py)+RotationMatrix[2,2]*(p.pz)
+    px_rot = RotationMatrix[0,0] * (p.px) +RotationMatrix[0,1] * (p.py)+RotationMatrix[0,2]*(p.pz)
+    py_rot = RotationMatrix[1,0] * (p.px) +RotationMatrix[1,1] * (p.py)+RotationMatrix[1,2]*(p.pz)
+    pz_rot = RotationMatrix[2,0] * (p.px) +RotationMatrix[2,1] * (p.py)+RotationMatrix[2,2]*(p.pz)
 
     prot = LorentzVector(0.0,0.0,0.0,0.0)  
     prot.setpxpypze(px_rot, py_rot, pz_rot, p.e )
@@ -264,8 +266,10 @@ def calc_planarflow(jet):
   MomentumTensor[0,1] = val01
   MomentumTensor[0,0] = val10
   MomentumTensor[1,1] = val11
+  #print('Momentum Tensor:', MomentumTensor)
 
   #eigen = TMatrixDSymEigen(MomentumTensor)
+  #Lambda = eigen.GetEigenValues();
   Lambda, eigen = np.linalg.eig(MomentumTensor)
   num = 4*Lambda[0]*Lambda[1]
   den = (Lambda[0]+Lambda[1]) * (Lambda[0]+Lambda[1])
@@ -286,13 +290,16 @@ def calc_qw(jet):
   cs = cluster(constituents, R=1.0, p=-1)
   scaleF = 1.
   outjets= cs.exclusive_jets(3) 
+  #qw agreement is much better when all 3 outjets have nonzero mas... 
+  #print('outjets: ' , outjets)
   m0_jet = LorentzVector(outjets[0].px, outjets[0].py, outjets[0].pz, outjets[0].e)
   m1_jet = LorentzVector(outjets[1].px, outjets[1].py, outjets[1].pz, outjets[1].e)
   m2_jet = LorentzVector(outjets[2].px, outjets[2].py, outjets[2].pz, outjets[2].e)
 
   m12 = (m0_jet + m1_jet).m
   m23 = (m2_jet + m1_jet).m
-  m13 = (m2_jet + m0_jet).m
+  m13 = (m2_jet + m0_jet).m 
+  #print('m12: ' , m12, ', m23: ' , m23, ' , m13: ' , m13)
 
   qw = scaleF*np.minimum( m12, np.minimum(m23,m13) )
   #print('Qw: ' , qw)
@@ -301,14 +308,16 @@ def calc_qw(jet):
 
 #-------------------------------------------------------------------
 def calc_zcut(jet):
+  #if Split12 and Split23 agree, zcut tends to as well... 
+  #dmin12  = jet_AntiKt10LCTopo_SPLIT12->at(i);
+  #jetmass = jet_AntiKt10LCTopo_constscale_m->at(i);
+  #zcut12  = std::pow(dmin12,2)/(std::pow(dmin12,2)+std::pow(jetmass,2));
+
 
   constit_pseudojets = jet.constituents_array()
   if len(constit_pseudojets) == 0: return -1
-  m_nSubJets = 2
- 
-  #jet_def = JetDefinition('antikt', 1.0) 
-  #kt_clust_seq = ClusterSequence(constit_pseudojets, jet_def)
-  kt_clust_seq = cluster(constit_pseudojets, R=1.0, p=-1)
+  m_nSubJets = 1 #12 variables
+  kt_clust_seq = cluster(constit_pseudojets, R=1.5, p=1)
 
   if len(constit_pseudojets) < m_nSubJets: return 0.0 #We were asked to calculate zCut, but there are not enough constituents
   subjets = kt_clust_seq.exclusive_jets(m_nSubJets)
@@ -316,13 +325,13 @@ def calc_zcut(jet):
   #Find last split jet (cluster_hist_index should be highest for the last created jet)
   lastSplitSubjet = None
   max_cluster_hist_index = -1
-   
   for subj in subjets:
     if subj.parents != None: 
       parent1 = subj.parents[0]; parent2 = subj.parents[1]
     if subj.parents != None and subj.cluster_hist_index > max_cluster_hist_index:
       max_cluster_hist_index = subj.cluster_hist_index
       lastSplitSubjet = subj
+  #print('last split subjet: ' , lastSplitSubjet)
 
   if max_cluster_hist_index == -1: return 0.0 #None of the subjets were split
 
@@ -332,10 +341,11 @@ def calc_zcut(jet):
   kt_jets = np.flip(old_kt_jets)
   kt_jet = kt_jets[0]
   #print('kt jet: ' , kt_jet)
-  split = 1.5*sqrt(kt_clust_seq.exclusive_subdmerge(kt_jet, m_nSubJets))
+  split = 1.5*np.sqrt(kt_clust_seq.exclusive_subdmerge(kt_jet, m_nSubJets))
   dmin = pow(split, 2.0)
 
   zcut = -1
+  #print('dmin: ', dmin, ', last split subjet mass squared: ' , lastSplitSubjet.m2)
   if dmin == 0: zcut = 0
   else: zcut = np.divide(dmin, dmin + lastSplitSubjet.m2)
 
@@ -378,7 +388,9 @@ def calc_ktdr(jet):
 
   jets = jet.constituents_array()
   if len(jets) < 2: return 0.0
-  sequence = cluster(jets, R=1.0, p=-1)
+  #sequence = cluster(jets, R=1.0, p=-1)
+  jd = JetDefinition('kt',1.0) #E_scheme,Best)
+  sequence = cluster(jets, jd)
   jets_sub = sequence.exclusive_jets(2)   #constituent list 
   if len(jets_sub) < 2: return 0.0
 
@@ -427,16 +439,17 @@ if __name__ == "__main__":
       #pseudojets_input = np.zeros(len([x for x in jets_orig[i][0][::3] if x > 0]), dtype=DTYPE_PTEPM)
       pseudojets_input = np.zeros(shape=[50], dtype=DTYPE_PTEPM)
       for j in range(50): #number of hadrons per event
-          if (jets_orig[i][j]["pt"] >1.0):   #min pT cut to enter clustering, could make this tighter
-              pseudojets_input[j][0] = jets_orig[i][j]["pt"]
-              pseudojets_input[j][1] = jets_orig[i][j]["eta"]
-              pseudojets_input[j][2] = jets_orig[i][j]["phi"]
-              #print('Constituent small R jet pt: ', pseudojets_input[j][0])
-              pass
+          if (jets_orig[i][j]["pt"] > 0.0):   #min pT cut to enter clustering, could make this tighter
+             pseudojets_input[j][0] = jets_orig[i][j]["pt"]
+             pseudojets_input[j][1] = jets_orig[i][j]["eta"]
+             pseudojets_input[j][2] = jets_orig[i][j]["phi"]
+             pseudojets_input[j][3] = 0 #all 0 mass?
+             #print('Constituent small R jet pt: ', pseudojets_input[j][0])
+          pass
           pass
     
       sequence = cluster(pseudojets_input, R=1.0, p=-1)
-      jets = sequence.inclusive_jets(ptmin=20)   #resulting clustered jets with pT > 20
+      jets = sequence.inclusive_jets(ptmin=0.0)   #resulting clustered jets with pT > 20
  
       ############################
       ### Substructure variables
@@ -456,7 +469,7 @@ if __name__ == "__main__":
           c2, d2 = calc_ecf(jet)
           #Nsubjettiness
           tau1,tau2,tau3 = calc_tau(jet)
-          tau21,tau23,tau13 = calc_tauratio(jet)
+          tau21,tau32,tau31 = calc_tauratio(jet)
           aplanarity = calc_aplanarity(jet)
           #Kt splitting
           split12,split23 = calc_ktsplit(jet)
@@ -466,11 +479,17 @@ if __name__ == "__main__":
           angularity = calc_angularity(jet)
           zcut = calc_zcut(jet)
           qw = calc_qw(jet) ##do we have a massCut or SmallSubjets scenario??
-          tmp_hlvs = [c2,d2,tau1,tau2,tau3,tau21,tau23,tau13,aplanarity,split12,split23, planarFlow, angularity, KtDR, zcut, qw]
+          tmp_hlvs = [c2,d2,tau1,tau2,tau3,tau21,tau32,tau31,aplanarity,split12,split23, planarFlow, angularity, KtDR, zcut, qw]
 
           print('       My script;            original:')
           print('c2: ', c2, ',    ', fat_jets[i]["C2"])
           print('d2: ', d2, ',    ', fat_jets[i]["D2"])
+          print('tau1: ', tau1, ',    ', fat_jets[i]["Tau1_wta"])
+          print('tau2: ', tau2, ',    ', fat_jets[i]["Tau2_wta"])
+          print('tau3: ', tau3, ',    ', fat_jets[i]["Tau3_wta"])
+          print('tau21: ', tau21, ',    ', fat_jets[i]["Tau21_wta"])
+          print('tau32: ', tau32, ',    ', fat_jets[i]["Tau32_wta"])
+          print('tau31: ', tau31, ',    ', fat_jets[i]["Tau31_wta"])
           print('Aplanarity: ', aplanarity, ',        ', fat_jets[i]["Aplanarity"])
           print('Split12: ', split12, ',     ', fat_jets[i]["Split12"])
           print('Split23: ', split23, ',     ', fat_jets[i]["Split23"])
