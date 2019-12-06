@@ -128,10 +128,10 @@ def boost(jet, bx, by, bz):
    if b2 > 0.: gamma2 = np.divide(gamma - 1.0, b2)
    else: gamma2 = 0.
 
-   xp = jet.px + gamma2 * bp * bx - gamma * bx * jet.t
-   yp = jet.py + gamma2 * bp * by - gamma * by * jet.t
-   zp = jet.pz + gamma2 * bp * bz - gamma * bz * jet.t
-   tp = gamma * ( jet.t - bp )
+   xp = jet.px + gamma2 * bp * bx + gamma * bx * jet.t
+   yp = jet.py + gamma2 * bp * by + gamma * by * jet.t
+   zp = jet.pz + gamma2 * bp * bz + gamma * bz * jet.t
+   tp = gamma * ( jet.t + bp )
 
    return LorentzVector(xp, yp, zp, tp)
 
@@ -187,15 +187,15 @@ def calc_aplanarity(jet):
   Aplanarity = -1;
 
   if P2Sum > 0:
-    MomentumTensor[0,0] = val00
-    MomentumTensor[1,0] = val10
-    MomentumTensor[2,0] = val20
-    MomentumTensor[0,1] = val01
-    MomentumTensor[1,1] = val11
-    MomentumTensor[2,1] = val21
-    MomentumTensor[0,2] = val02
-    MomentumTensor[1,2] = val12
-    MomentumTensor[2,2] = val22
+    MomentumTensor[0,0] = val00/P2Sum
+    MomentumTensor[1,0] = val10/P2Sum
+    MomentumTensor[2,0] = val20/P2Sum
+    MomentumTensor[0,1] = val01/P2Sum
+    MomentumTensor[1,1] = val11/P2Sum
+    MomentumTensor[2,1] = val21/P2Sum
+    MomentumTensor[0,2] = val02/P2Sum
+    MomentumTensor[1,2] = val12/P2Sum
+    MomentumTensor[2,2] = val22/P2Sum
 
     u, Lambda, vh = np.linalg.svd(MomentumTensor) #unitary arrays, singular values, hermitian unitary
     #print(u, s, vh)
