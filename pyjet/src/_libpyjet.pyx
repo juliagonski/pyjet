@@ -52,6 +52,40 @@ JET_ALGORITHM = {
     'undefined': fastjet.undefined_jet_algorithm,
 }
 
+STRATEGY_DEF={
+  'N2MHTLazy9AntiKtSeparateGhosts': fastjet.N2MHTLazy9AntiKtSeparateGhosts, 
+  'N2MHTLazy9'    : fastjet.N2MHTLazy9,
+  'N2MHTLazy25'   : fastjet.N2MHTLazy25, 
+  'N2MHTLazy9Alt' : fastjet.N2MHTLazy9Alt  , 
+  'N2MinHeapTiled': fastjet.N2MinHeapTiled , 
+  'N2Tiled'    : fastjet.N2Tiled    , 
+  'N2PoorTiled': fastjet.N2PoorTiled ,
+  'N2Plain'    : fastjet.N2Plain,    
+  'N3Dumb'     : fastjet.N3Dumb,     
+  'Best'       : fastjet.Best,       
+  'NlnN'       : fastjet.NlnN ,
+  'NlnN3pi'    : fastjet.NlnN3pi,    
+  'NlnN4pi'    : fastjet.NlnN4pi,    
+  'NlnNCam4pi' :   fastjet.NlnNCam4pi,  
+  'NlnNCam2pi2R' :  fastjet.NlnNCam2pi2R,
+  'NlnNCam'      :  fastjet.NlnNCam    , 
+  'BestFJ30'     :  fastjet.BestFJ30   , 
+  'plugin_strategy' : fastjet.plugin_strategy
+}
+
+RECOMBINATION_SCHEME= {
+  'E_scheme' : fastjet.E_scheme,
+  'pt_scheme' : fastjet.pt_scheme,
+  'pt2_scheme' : fastjet.pt2_scheme,
+  'Et_scheme': fastjet.Et_scheme,
+  'Et2_scheme' : fastjet.Et2_scheme,
+  'BIpt_scheme' :  fastjet.BIpt_scheme,
+  'BIpt2_scheme' : fastjet.BIpt2_scheme, 
+  'WTA_pt_scheme' : fastjet.WTA_pt_scheme,
+  'WTA_modp_scheme' : fastjet.WTA_modp_scheme,
+  'external_scheme' : fastjet.external_scheme
+}
+
 JET_AREA = {
     'active': fastjet.active_area,
     'active_explicit_ghosts': fastjet.active_area_explicit_ghosts,
@@ -78,17 +112,28 @@ cdef class JetDefinition:
     def __cinit__(self):
         self.jdef = NULL
 
+    #def __init__(self, algo='undefined', R=None, p=None, recomb=None, strat=None):
     def __init__(self, algo='undefined', R=None, p=None):
         if self.jdef != NULL:
             del self.jdef
         cdef fastjet.JetAlgorithm _algo
+        #cdef fastjet.RecombinationScheme _scheme
+        #cdef fastjet.Strategy _strat
         try:
             _algo = JET_ALGORITHM[algo]
         except KeyError:
             raise ValueError("{0:r} is not a valid jet algorithm".format(algo))
+        #try:
+        #    _strat = STRATEGY_DEF[strat]
+        #except KeyError:
+        #    raise ValueError("{0:r} is not a valid jet def strategy".format(strat))
+        #try:
+        #    _scheme = RECOMBINATION_SCHEME[recomb]
+        #except KeyError:
+        #    raise ValueError("{0:r} is not a valid recombination scheme".format(recomb))
         if R is not None:
-            if p is not None:
-                self.jdef = new fastjet.JetDefinition(_algo, R, p)
+            #if _strat is not None and _scheme is not None: self.jdef = new fastjet.JetDefinition(_algo, R, _scheme, _strat)
+            if p is not None: self.jdef = new fastjet.JetDefinition(_algo, R, p)
             else:
                 self.jdef = new fastjet.JetDefinition(_algo, R)
         else:
@@ -106,9 +151,11 @@ cdef class AxesDefinition: #don't instantiate anything
     
     def __cinit__(self):
         pass
-
     def KT_Axes(self):
         pass
+    def WTA_KT_Axes(self):
+        pass
+
 cdef class KT_Axes(AxesDefinition):
     """ Python wrapper class for fjcontrib AxesDefinition
     """
@@ -116,6 +163,18 @@ cdef class KT_Axes(AxesDefinition):
 
     def __cinit__(self):
       self.derivedptr = new fastjet.KT_Axes()
+      self.baseptr = self.derivedptr
+  
+    def __dealloc__(self):
+        del self.derivedptr
+
+cdef class WTA_KT_Axes(AxesDefinition):
+    """ Python wrapper class for fjcontrib AxesDefinition
+    """
+    cdef fastjet.WTA_KT_Axes* derivedptr
+
+    def __cinit__(self):
+      self.derivedptr = new fastjet.WTA_KT_Axes()
       self.baseptr = self.derivedptr
   
     def __dealloc__(self):

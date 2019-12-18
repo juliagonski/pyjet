@@ -1,6 +1,6 @@
-###### To implement changes in fastjet: 
-#-- (pip install cython on xenia)
-#-- Add functionality from fastjet to fastjet.pxd file and __libpyjet.pyx
+###### To iamplement changes in fastjet: 
+#a-- (pip inastall cython on xenia)
+#a-- Add functionality from fastjet to fastjet.pxd file and __libpyjet.pyx
 #-- in pyjet/src: cython --cplus _libpyjet.pyx (this generates .cpp file)
 #-- in pyjet: make  (or python3 setup.py build_ext --inplace)
 
@@ -16,7 +16,7 @@
 #Angularity
 #KtDR
 
-
+import argparse
 import h5py    
 import numpy as np 
 import matplotlib.pyplot as plt
@@ -26,11 +26,11 @@ from skhep.math.vectors import *
 import pickle
 import glob
 from pprint import pprint
-#from ROOT import TLorentzVector,TMatrixDSym,TMatrixDSymEigen,TVectorD
+from ROOT import TLorentzVector,TMatrixDSym,TMatrixDSymEigen,TVectorD, TH1D,TTree,TCanvas, TFile
 
-import sys 
+
 sys.path.append("/Users/juliagonski/Documents/Columbia/Physics/yXH/test_pyjet_extfastjet/pyjet")
-from pyjet import DTYPE_PTEPM,ClusterSequence,JetDefinition,PseudoJet,cluster,EnergyCorrelator,EnergyCorrelatorC2,EnergyCorrelatorD2,Nsubjettiness,NsubjettinessRatio,KT_Axes,NormalizedMeasure
+from pyjet import DTYPE_PTEPM,ClusterSequence,JetDefinition,PseudoJet,cluster,EnergyCorrelator,EnergyCorrelatorC2,EnergyCorrelatorD2,Nsubjettiness,NsubjettinessRatio,WTA_KT_Axes,NormalizedMeasure
 #JetFFMoments
 
 
@@ -72,7 +72,7 @@ def calc_ecf(jet):
 def calc_tau(jet):
   #axes_def = contrib::KT_Axes() #from athena 
   #measure_def= contrib::NormalizedMeasure() #these are classes...  fastjet::contrib::KT_Axes kt_axes
-  axes_def = KT_Axes()
+  axes_def = WTA_KT_Axes()
   measure_def = NormalizedMeasure(1.0,1.0) #beta, R0
   Nsub_1 = Nsubjettiness(1,axes_def,measure_def)
   Nsub_2 = Nsubjettiness(2,axes_def,measure_def)
@@ -85,7 +85,7 @@ def calc_tau(jet):
   return [tau_1,tau_2,tau_3]
 #-------------------------------------------------------------------
 def calc_tauratio(jet):
-  axes_def = KT_Axes()
+  axes_def = WTA_KT_Axes()
   measure_def = NormalizedMeasure(1.0,1.0)
   Nsub_21 = NsubjettinessRatio(2,1,axes_def,measure_def)
   Nsub_32 = NsubjettinessRatio(3,2,axes_def,measure_def)
@@ -104,9 +104,9 @@ def calc_ktsplit(jet):
   split12 = -1 
   split23 = -1
 
-  #ekt_jd = JetDefinition('kt',1.5) #E_scheme,Best)
-  #kt_seq_excl = ClusterSequence(jet.constituents_array(), R=1.5, p=1)
-  kt_seq_excl = cluster(jet.constituents_array(), R=1.5, p=1)
+  jet_def = JetDefinition('kt',1.5) #E_scheme,Best)
+  kt_seq_excl = ClusterSequence(jet.constituents_array(), jet_def)
+  #kt_seq_excl = cluster(jet.constituents_array(), R=1.5, p=1)
   old_kt_jets = kt_seq_excl.inclusive_jets() #large R jets
   old_kt_jets.sort() #sorted backwards
   kt_jets = np.flip(old_kt_jets)
@@ -405,12 +405,23 @@ def calc_ktdr(jet):
 ##########################################################################
 #-------------------------------------------------------------------------
 if __name__ == "__main__":
+  parser = argparse.ArgumentParser()
+  parser.add_argument("-s", "--start", default = 0, type=int, nargs='+',
+                     help="start # events")
+  parser.add_argument("-e", "--end", default = 100000, type=int, nargs='+',
+                     help="end # events")
+  args = parser.parse_args()
+  startNum = args.start[0]
+  endNum = args.end[0]
+  print('Start: ' , startNum, ', end: ', endNum)
 
   #print(dir(pyjet))
 
   #f = pd.read_hdf("/Users/juliagonski/Documents/Columbia/Physics/yXH/lhcOlympics2020/events_anomalydetection.h5")
   #f_ref = pd.read_hdf("/Users/juliagonski/Documents/Columbia/Physics/yXH/lhcOlympics2020/user.miochoa.19650387._000001.output.h5")
   f_ref = h5py.File("examples/user.miochoa.19650387._000001.output.h5", "r")
+  #f_ref = pd.read_hdf("examples/user.miochoa.19650387._000001.output.h5",start=startNum,stop=endNum)
+  #f_ref = h5py.File("examples/output_parentJet_nConst200.h5", "r")
   #events_combined = f.T
   #np.shape(events_combined)
 
@@ -419,6 +430,8 @@ if __name__ == "__main__":
 
   n_consts = 11
   n_start = 10
+
+  hists_file = TFile( 'hists_trimmedtcc.root', 'UPDATE' )
 
 
   #Now, let's cluster some jets!
@@ -429,8 +442,27 @@ if __name__ == "__main__":
   for n_c in range(n_start, n_consts):
     print('Current n_Consts: ', n_c)
 
+    #plt.hist(data, bins = np.arange(min(data), max(data)+1, 1), normed=True)
+    hist_c2 = TH1D('c2','c2',100,-100,100)
+    hist_d2 = TH1D('d2','d2',100,-100,100)
+    hist_tau1 = TH1D('tau1','tau1',100,-100,100)
+    hist_tau2 = TH1D('tau2','tau2',100,-100,100)
+    hist_tau3 = TH1D('tau3','tau3',100,-100,100)
+    hist_tau21 = TH1D('tau21','tau21',100,-100,100)
+    hist_tau32 = TH1D('tau32','tau32',100,-100,100)
+    hist_tau31 = TH1D('tau31','tau31',100,-100,100)
+    hist_aplanarity = TH1D('aplanarity','aplanarity',100,-100,100)
+    hist_split12 = TH1D('split12','split12',100,-100,100)
+    hist_split23 = TH1D('split23','split23',100,-100,100)
+    hist_ktdr = TH1D('ktdr','ktdr',100,-100,100)
+    hist_planarflow = TH1D('planarflow','planarflow',100,-500,500)
+    hist_angularity = TH1D('angularity','angularity',100,-100,100)
+    hist_zcut = TH1D('zcut','zcut',100,-100,100)
+    hist_qw = TH1D('qw','qw',100,-500,500)
+
+
     #for mytype in ['background','signal']:
-    for i in range(100): #len(fat_jet):
+    for i in range(endNum): #len(fat_jet):
       if (i%10000==0):
           print(i)
           pass
@@ -446,7 +478,7 @@ if __name__ == "__main__":
              pseudojets_input[j][3] = 0 #all 0 mass?
              #print('Constituent small R jet pt: ', pseudojets_input[j][0])
           pass
-          pass
+      pass
     
       sequence = cluster(pseudojets_input, R=1.0, p=-1)
       jets = sequence.inclusive_jets(ptmin=0.0)   #resulting clustered jets with pT > 20
@@ -466,41 +498,80 @@ if __name__ == "__main__":
         else:
           #calc substructure variables 
           #ECF
-          c2, d2 = calc_ecf(jet)
+          C2, D2 = calc_ecf(jet)
           #Nsubjettiness
-          tau1,tau2,tau3 = calc_tau(jet)
-          tau21,tau32,tau31 = calc_tauratio(jet)
-          aplanarity = calc_aplanarity(jet)
+          Tau1_wta,Tau2_wta,Tau3_wta = calc_tau(jet)
+          Tau21_wta,Tau32_wta,Tau31_wta = calc_tauratio(jet)
+          Aplanarity = calc_aplanarity(jet)
           #Kt splitting
-          split12,split23 = calc_ktsplit(jet)
+          Split12,Split23 = calc_ktsplit(jet)
           #Simple vars
           KtDR = calc_ktdr(jet)
-          planarFlow = calc_planarflow(jet)
-          angularity = calc_angularity(jet)
-          zcut = calc_zcut(jet)
-          qw = calc_qw(jet) ##do we have a massCut or SmallSubjets scenario??
-          tmp_hlvs = [c2,d2,tau1,tau2,tau3,tau21,tau32,tau31,aplanarity,split12,split23, planarFlow, angularity, KtDR, zcut, qw]
+          PlanarFlow = calc_planarflow(jet)
+          Angularity = calc_angularity(jet)
+          ZCut12 = calc_zcut(jet)
+          Qw = calc_qw(jet) ##do we have a massCut or SmallSubjets scenario??
+          #tmp_hlvs = [c2,d2,tau1,tau2,tau3,tau21,tau32,tau31,aplanarity,split12,split23, planarFlow, angularity, KtDR, zcut, qw]
 
+
+          #d_c2 = c2 - fat_jets[i]["C2"]
+          #d_d2 = d2 - fat_jets[i]["D2"]
+          #d_d2 = d2 - fat_jets[i]["D2"]
           print('       My script;            original:')
-          print('c2: ', c2, ',    ', fat_jets[i]["C2"])
-          print('d2: ', d2, ',    ', fat_jets[i]["D2"])
-          print('tau1: ', tau1, ',    ', fat_jets[i]["Tau1_wta"])
-          print('tau2: ', tau2, ',    ', fat_jets[i]["Tau2_wta"])
-          print('tau3: ', tau3, ',    ', fat_jets[i]["Tau3_wta"])
-          print('tau21: ', tau21, ',    ', fat_jets[i]["Tau21_wta"])
-          print('tau32: ', tau32, ',    ', fat_jets[i]["Tau32_wta"])
-          print('tau31: ', tau31, ',    ', fat_jets[i]["Tau31_wta"])
-          print('Aplanarity: ', aplanarity, ',        ', fat_jets[i]["Aplanarity"])
-          print('Split12: ', split12, ',     ', fat_jets[i]["Split12"])
-          print('Split23: ', split23, ',     ', fat_jets[i]["Split23"])
+          print('c2: ', C2, ',    ', fat_jets[i]["C2"])
+          print('d2: ', D2, ',    ', fat_jets[i]["D2"])
+          print('tau1: ', Tau1_wta, ',    ', fat_jets[i]["Tau1_wta"])
+          print('tau2: ', Tau2_wta, ',    ', fat_jets[i]["Tau2_wta"])
+          print('tau3: ', Tau3_wta, ',    ', fat_jets[i]["Tau3_wta"])
+          print('tau21: ', Tau21_wta, ',    ', fat_jets[i]["Tau21_wta"])
+          print('tau32: ', Tau32_wta, ',    ', fat_jets[i]["Tau32_wta"])
+          print('tau31: ', Tau31_wta, ',    ', fat_jets[i]["Tau31_wta"])
+          print('Aplanarity: ', Aplanarity, ',        ', fat_jets[i]["Aplanarity"])
+          print('Split12: ', Split12, ',     ', fat_jets[i]["Split12"])
+          print('Split23: ', Split23, ',     ', fat_jets[i]["Split23"])
           print('KtDR: ', KtDR, ',         ', fat_jets[i]["KtDR"])
-          print('Planar flow: ', planarFlow, ',    ', fat_jets[i]["PlanarFlow"])
-          print('Angularity: ', angularity, ',    ', fat_jets[i]["Angularity"])
-          print('Zcut12: ', zcut, ',       ', fat_jets[i]["ZCut12"])
-          print('Qw: ', qw, ',    ', fat_jets[i]["Qw"])
- 
+          print('Planar flow: ', PlanarFlow, ',    ', fat_jets[i]["PlanarFlow"])
+          print('Angularity: ', Angularity, ',    ', fat_jets[i]["Angularity"])
+          print('Zcut12: ', ZCut12, ',       ', fat_jets[i]["ZCut12"])
+          print('Qw: ', Qw, ',    ', fat_jets[i]["Qw"])
+
+           
+          hist_c2.Fill(100*np.divide(C2-fat_jets[i]["C2"],fat_jets[i]["C2"]))
+          hist_d2.Fill(100*np.divide(D2-fat_jets[i]["D2"],fat_jets[i]["D2"]))
+          hist_tau1.Fill(100*np.divide(Tau1_wta-fat_jets[i]["Tau1_wta"],fat_jets[i]["Tau1_wta"]))
+          hist_tau2.Fill(100*np.divide(Tau2_wta-fat_jets[i]["Tau2_wta"],fat_jets[i]["Tau2_wta"]))
+          hist_tau3.Fill(100*np.divide(Tau3_wta-fat_jets[i]["Tau3_wta"],fat_jets[i]["Tau3_wta"]))
+          hist_tau21.Fill(100*np.divide(Tau21_wta-fat_jets[i]["Tau21_wta"],fat_jets[i]["Tau21_wta"]))
+          hist_tau32.Fill(100*np.divide(Tau32_wta-fat_jets[i]["Tau32_wta"],fat_jets[i]["Tau32_wta"]))
+          hist_tau31.Fill(100*np.divide(Tau31_wta-fat_jets[i]["Tau31_wta"],fat_jets[i]["Tau31_wta"]))
+          hist_split12.Fill(100*np.divide(Split12-fat_jets[i]["Split12"],fat_jets[i]["Split12"]))
+          hist_split23.Fill(100*np.divide(Split23-fat_jets[i]["Split23"],fat_jets[i]["Split23"]))
+          hist_angularity.Fill(100*np.divide(Angularity-fat_jets[i]["Angularity"],fat_jets[i]["Angularity"]))
+          hist_aplanarity.Fill(100*np.divide(Aplanarity-fat_jets[i]["Aplanarity"],fat_jets[i]["Aplanarity"]))
+          hist_ktdr.Fill(100*np.divide(KtDR-fat_jets[i]["KtDR"],fat_jets[i]["KtDR"]))
+          hist_planarflow.Fill(100*np.divide(PlanarFlow-fat_jets[i]["PlanarFlow"],fat_jets[i]["PlanarFlow"]))
+          hist_zcut.Fill(100*np.divide(ZCut12-fat_jets[i]["ZCut12"],fat_jets[i]["ZCut12"]))
+          hist_qw.Fill(100*np.divide(Qw-fat_jets[i]["Qw"],fat_jets[i]["Qw"]))
+          #print('fill c2: ',                   np.divide(c2-fat_jets[i]["C2"],fat_jets[i]["C2"]))                                  
+          #print('fill d2: ',                   np.divide(d2-fat_jets[i]["D2"],fat_jets[i]["D2"]))
+          #print('fill tau1: ',                 np.divide(tau1-fat_jets[i]["Tau1_wta"],fat_jets[i]["Tau1_wta"]))
+          #print('fill tau2: ',                 np.divide(tau2-fat_jets[i]["Tau2_wta"],fat_jets[i]["Tau2_wta"]))
+          #print('fill tau3: ',                 np.divide(tau3-fat_jets[i]["Tau3_wta"],fat_jets[i]["Tau3_wta"]))
+          #print('fill tau21: ',                np.divide(tau21-fat_jets[i]["Tau21_wta"],fat_jets[i]["Tau21_wta"]))
+          #print('fill tau32: ',                np.divide(tau32-fat_jets[i]["Tau32_wta"],fat_jets[i]["Tau32_wta"]))
+          #print('fill tau31: ',                np.divide(tau31-fat_jets[i]["Tau31_wta"],fat_jets[i]["Tau31_wta"]))
+          #print('fill Split12:',            np.divide(split12-fat_jets[i]["Split12"],fat_jets[i]["Split12"]))
+          #print('fill Split23: ',              np.divide(split23-fat_jets[i]["Split23"],fat_jets[i]["Split23"]))
+          #print('fill agnularity: ',              np.divide(angularity-fat_jets[i]["Angularity"],fat_jets[i]["Angularity"]))
+          #print('fill aplanarity: ',                 np.divide(aplanarity-fat_jets[i]["Aplanarity"],fat_jets[i]["Aplanarity"]))
+          #print('fill ktdr:',           np.divide(KtDR-fat_jets[i]["KtDR"],fat_jets[i]["KtDR"]))
+          #print('fill planarflow:',            np.divide(planarFlow-fat_jets[i]["PlanarFlow"],fat_jets[i]["PlanarFlow"]))
+          #print('fill Zcut12: ', np.divide(zcut-fat_jets[i]["ZCut12"],fat_jets[i]["ZCut12"]))
+          #print('fill Qw: ',         np.divide(qw-fat_jets[i]["Qw"],fat_jets[i]["Qw"]))
+
+
           #push to respective groups (signal, validation, training)
-          hlvs_signal.append(tmp_hlvs)
+          #hlvs_signal.append(tmp_hlvs)
         pass
  
         if len(hlvs_signal) >= 0: 
@@ -508,7 +579,47 @@ if __name__ == "__main__":
 
   #------------------------------------------------------------------------------------------------------------------------------------
   #------------------------------------------------------------------------------------------------------------------------------------
-  outfile_sig = h5py.File("events_anomalydetection_signal_boosted_VRNN.hdf5","w")
-  for i in range(n_start,n_consts):
-    outfile_sig.create_dataset(str(i)+"/hlvs", data=sorted_hlvs_signal[str(i)])
-  outfile_sig.close()
+  #gStyle.SetOptStat(0)
+  c1 = TCanvas('c1', 'c1', 500,400)
+  c1.SetLogy()
+  hist_c2.Draw("hist")
+  c1.SaveAs("plots/hist_c2.pdf")
+  hist_d2.Draw("hist")
+  c1.SaveAs("plots/hist_d2.pdf")
+  hist_tau1.Draw("hist")
+  c1.SaveAs("plots/hist_tau1.pdf")
+  hist_tau2.Draw("hist")
+  c1.SaveAs("plots/hist_tau2.pdf")
+  hist_tau3.Draw("hist")
+  c1.SaveAs("plots/hist_tau3.pdf")
+  hist_tau21.Draw("hist")
+  c1.SaveAs("plots/hist_tau21.pdf")
+  hist_tau32.Draw("hist")
+  c1.SaveAs("plots/hist_tau32.pdf")
+  hist_tau31.Draw("hist")
+  c1.SaveAs("plots/hist_tau31.pdf")
+  hist_split12.Draw("hist")
+  c1.SaveAs("plots/hist_split12.pdf")
+  hist_split23.Draw("hist")
+  c1.SaveAs("plots/hist_split23.pdf")
+  hist_angularity.Draw("hist")
+  c1.SaveAs("plots/hist_angularity.pdf")
+  hist_aplanarity.Draw("hist")
+  c1.SaveAs("plots/hist_aplanarity.pdf")
+  hist_ktdr.Draw("hist")
+  c1.SaveAs("plots/hist_ktdr.pdf")
+  hist_zcut.Draw("hist")
+  c1.SaveAs("plots/hist_zcut.pdf")
+  hist_qw.Draw("hist")
+  c1.SaveAs("plots/hist_qw.pdf")
+  hist_planarflow.Draw("hist")
+  c1.SaveAs("plots/hist_planarflow.pdf")
+  hists_file.Write()  
+  hists_file.Close()
+
+  #outfile_sig = h5py.File("events_anomalydetection_signal_boosted_VRNN.hdf5","w")
+  #for i in range(n_start,n_consts):
+  #  outfile_sig.create_dataset(str(i)+"/hlvs", data=sorted_hlvs_signal[str(i)])
+  #outfile_sig.close()
+
+

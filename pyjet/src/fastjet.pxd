@@ -10,6 +10,8 @@ cdef extern from "fastjet.h" namespace "fastjet::contrib":
         AxesDefinition() except +
     cdef cppclass KT_Axes(AxesDefinition):
         KT_Axes() except +
+    cdef cppclass WTA_KT_Axes(AxesDefinition):
+        WTA_KT_Axes() except +
 
     cdef cppclass MeasureDefinition:
         MeasureDefinition(double, double) except +
@@ -63,7 +65,7 @@ cdef extern from "fastjet.h" namespace "fastjet::contrib::EnergyCorrelator":
             #///< For N>=3 this leads to many expensive recomputations,
             #///< but has only O(n) memory usage for n particles
         storage_array  #/// the interparticle angles are cached. This gives a significant speed
-            #/// improvement for N>=3, but has a memory requirement of (4n^2) bytes.
+            #/// improvement for N>=3, but has a memory requirement of (4n^2A) bytes.
 
 
 cdef extern from "fastjet.h" namespace "fastjet":
@@ -139,6 +141,7 @@ cdef extern from "fastjet.h" namespace "fastjet":
         JetDefinition(JetAlgorithm) except +raise_py_error
         JetDefinition(JetAlgorithm, double R) except +raise_py_error
         JetDefinition(JetAlgorithm, double R, double extra) except +raise_py_error
+        #JetDefinition (JetAlgorithm, double R, RecombinationScheme recomb, Strategy strat)
 
     cdef enum AreaType "fastjet::AreaType":
         invalid_area,
@@ -147,6 +150,39 @@ cdef extern from "fastjet.h" namespace "fastjet":
         one_ghost_passive_area,
         passive_area,
         voronoi_area
+
+    cdef enum Strategy_Def "fastjet::Strategy":
+        N2MHTLazy9AntiKtSeparateGhosts,
+        N2MHTLazy9,
+        N2MHTLazy25, 
+        N2MHTLazy9Alt  , 
+        N2MinHeapTiled , 
+        N2Tiled    , 
+        N2PoorTiled ,
+        N2Plain,    
+        N3Dumb,     
+        Best,       
+        NlnN ,
+        NlnN3pi,    
+        NlnN4pi,    
+        NlnNCam4pi,  
+        NlnNCam2pi2R,
+        NlnNCam    , 
+        BestFJ30   , 
+        plugin_strategy
+
+    cdef enum RecombinationScheme "fastjet::RecombinationScheme":
+        E_scheme,
+        pt_scheme,
+        pt2_scheme,
+        Et_scheme,
+        Et2_scheme,
+        BIpt_scheme,
+        BIpt2_scheme, 
+        WTA_pt_scheme,
+        WTA_modp_scheme,
+        external_scheme
+    
 
     cdef cppclass AreaDefinition:
         AreaDefinition(AreaType)
