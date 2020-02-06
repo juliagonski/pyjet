@@ -4,6 +4,7 @@ from ._libpyjet import (ClusterSequence, ClusterSequenceArea,
                         Nsubjettiness,NsubjettinessRatio,
                         AxesDefinition,KT_Axes,WTA_KT_Axes,
                         MeasureDefinition,NormalizedMeasure,
+                        LundGenerator,
                         DTYPE, DTYPE_PTEPM, DTYPE_EP, USING_EXTERNAL_FASTJET)
 
 __all__ = [

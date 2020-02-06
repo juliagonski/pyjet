@@ -32,6 +32,15 @@ cdef extern from "fastjet.h" namespace "fastjet::contrib":
                  MeasureDefinition&)
         double result(PseudoJet&)
     
+    cdef cppclass LundDeclustering:
+        LundDeclustering()
+        double kt()
+        double Delta()
+
+    cdef cppclass LundGenerator:
+        LundGenerator()
+        LundGenerator(JetAlgorithm&)
+        vector[LundDeclustering] result(PseudoJet&)
 
     cdef cppclass EnergyCorrelatorC2:
         EnergyCorrelatorC2()

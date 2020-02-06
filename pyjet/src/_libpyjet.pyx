@@ -347,6 +347,56 @@ cdef class Nsubjettiness:
         return nsub_result
 
 
+cdef class LundDeclustering:
+    """ Python wrapper class for fjcontrib::LundDeclustering
+    """
+    cdef fastjet.LundDeclustering* declus
+    def __cinit__(self):
+        self.declus = NULL
+    
+    def __dealloc__(self):
+        del self.declus
+
+    @property
+    def kt(self):
+      return self.declus.kt()
+
+    @property
+    def Delta(self):
+      return self.declus.Delta()
+
+
+cdef class LundGenerator:
+    """ Python wrapper class for fjcontrib::LundGenerator
+    """
+    cdef fastjet.LundGenerator* lgen
+    #cdef vector[fastjet.LundDeclustering] declus
+
+    def __cinit__(self):
+        self.lgen = NULL
+
+    def __init__(self, str alg = 'cambridge'):
+        cdef fastjet.JetAlgorithm _alg
+        try:
+          _alg = JET_ALGORITHM[alg]
+        except KeyError:
+            raise ValueError("{0:r} is not a valid jet algorithm".format(alg))
+        self.lgen = new fastjet.LundGenerator(_alg)
+
+    def __dealloc__(self):
+        del self.lgen
+
+    def result(self, PseudoJet pseudojet):
+        """ obtain the declusterings of the primary plane of the jet
+        """
+        #cdef vector[fastjet.LundDeclustering] declus
+        #declus = self.lgen.result(pseudojet.jet)
+        #return vector_to_clus_array(declus)
+        vec = [0.0,0.0,0.0]
+        return vec
+  
+
+
 cdef class ClusterSequence:
     """ Python wrapper class for fastjet::ClusterSequence
     """
@@ -634,6 +684,18 @@ cdef np.ndarray vector_to_array(vector[fastjet.PseudoJet]& jets, bool ep=False):
             data[ijet * 4 + 3] = jet.m()
     return np_jets
 
+#cdef np.ndarray vector_to_clus_array(vector[fastjet.LundDeclustering]& declus):
+#    # convert vector of pseudojets into numpy array
+#    cdef np.ndarray de_clus
+#    de_clus = np.empty(declus.size())
+#    cdef DTYPE_t* data = <DTYPE_t *> de_clus.data
+#    #cdef fastjet.LundDeclustering ddclus
+#    #cdef unsigned int iclus
+#    for iclus in declus:
+#        #ddclus = declus[iclus]
+#        data[0] = iclus.Delta()
+#        data[1] = iclus.kt()
+#    return de_clus
 
 cdef list vector_to_list(vector[fastjet.PseudoJet]& jets):
     cdef list py_jets = []

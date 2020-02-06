@@ -36,6 +36,7 @@ class ClusterSequenceArea: public ClusterSequence {
 #include "fastjet/contrib/Nsubjettiness.hh"
 #include "fastjet/contrib/AxesDefinition.hh"
 #include "fastjet/contrib/MeasureDefinition.hh"
+#include "fastjet/contrib/LundGenerator.hh"
 #include "fastjet/PseudoJet.hh"
 #include "fastjet/ClusterSequence.hh"
 #include "fastjet/ClusterSequenceArea.hh"
